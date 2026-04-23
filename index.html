@@ -3,9 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>صندوق عائلة الرشيدان - سحابي</title>
-    <!-- تحميل مكتبة التشفير من مصدر موثوق -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsrsasign/10.8.6/jsrsasign.min.js"></script>
+    <title>صندوق عائلة الرشيدان</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Segoe UI', sans-serif; background: #f5f0e6; color: #1a2a4a; padding-bottom: 70px; }
@@ -14,192 +12,92 @@
         .btn { padding: 12px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; width: 100%; margin: 5px 0; }
         .btn-gold { background: #1a2a4a; color: white; }
         .btn-dark { background: #e8e0d0; border: 1px solid #1a2a4a; }
-        input, textarea { width: 100%; padding: 10px; border-radius: 10px; border: 1px solid #1a2a4a; margin-bottom: 10px; }
-        textarea { font-family: monospace; font-size: 11px; height: 150px; }
+        input { width: 100%; padding: 10px; border-radius: 10px; border: 1px solid #1a2a4a; margin-bottom: 10px; }
         .toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: #1a2a4a; color: white; padding: 10px 20px; border-radius: 30px; z-index: 999; }
         .flex { display: flex; gap: 10px; }
         .flex button { flex: 1; }
+        .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+        .stat { background: #f5f0e6; padding: 15px; border-radius: 10px; text-align: center; }
+        .stat-value { font-size: 24px; font-weight: bold; color: #1a2a4a; }
     </style>
 </head>
 <body>
-<div class="app" id="app">
+<div class="app">
     <div style="text-align:center; padding:20px; background:#e8e0d0; margin:10px; border-radius:30px;">
         <h1 style="color:#1a2a4a;">🏦 صندوق الرشيدان</h1>
         <p>ALRUSHAYDAN FAMILY FUND</p>
     </div>
 
-    <!-- إعدادات السحابة -->
     <div class="card">
-        <h3>☁️ إعدادات المزامنة السحابية</h3>
-        <input type="text" id="spreadsheetId" placeholder="Spreadsheet ID">
-        <input type="text" id="clientEmail" placeholder="Client Email">
-        <textarea id="privateKey" placeholder="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----"></textarea>
+        <h3>☁️ المزامنة السحابية</h3>
+        <input type="text" id="apiUrl" placeholder="رابط Google Apps Script">
         <div class="flex">
-            <button class="btn btn-gold" onclick="saveSettings()">💾 حفظ</button>
+            <button class="btn btn-gold" onclick="saveUrl()">💾 حفظ</button>
             <button class="btn btn-gold" onclick="syncToCloud()">📤 مزامنة للسحابة</button>
             <button class="btn btn-dark" onclick="syncFromCloud()">📥 تحميل من السحابة</button>
         </div>
         <div id="status" style="margin-top:10px; font-size:12px; text-align:center;"></div>
     </div>
 
-    <!-- بيانات التطبيق الأساسية (مختصرة) -->
     <div class="card">
         <h3>📊 الإحصائيات</h3>
-        <div id="stats">تحميل...</div>
+        <div class="stats" id="stats">
+            <div class="stat"><div>بند الطوارئ</div><div class="stat-value" id="emergencyBalance">0</div></div>
+            <div class="stat"><div>إجمالي المُقرض</div><div class="stat-value" id="totalLent">0</div></div>
+        </div>
     </div>
 </div>
 
 <script>
-    // بياناتك
-    let members = [];
-    let loans = [];
-    let emergencyBalance = 9988;
-    let totalLent = 139900;
+    let apiUrl = localStorage.getItem('apiUrl') || '';
 
-    // إعدادات السحابة
-    let spreadsheetId = localStorage.getItem('spreadsheetId') || '';
-    let clientEmail = localStorage.getItem('clientEmail') || '';
-    let privateKey = localStorage.getItem('privateKey') || '';
-
-    // ========== دوال التشفير باستخدام jsrsasign ==========
-    function generateJWT() {
-        try {
-            let header = { alg: "RS256", typ: "JWT" };
-            let now = Math.floor(Date.now() / 1000);
-            let claim = {
-                iss: clientEmail,
-                scope: "https://www.googleapis.com/auth/spreadsheets",
-                aud: "https://oauth2.googleapis.com/token",
-                exp: now + 3600,
-                iat: now
-            };
-            
-            let sHeader = JSON.stringify(header);
-            let sClaim = JSON.stringify(claim);
-            
-            // استخدام KJUR من المكتبة
-            let jwt = KJUR.jws.JWS.sign("RS256", sHeader, sClaim, privateKey);
-            return jwt;
-        } catch(e) {
-            console.error("JWT Error:", e);
-            throw new Error("خطأ في إنشاء التوكن: " + e.message);
-        }
+    function saveUrl() {
+        apiUrl = document.getElementById('apiUrl').value;
+        localStorage.setItem('apiUrl', apiUrl);
+        showMessage('✅ تم حفظ الرابط');
     }
 
     async function syncToCloud() {
-        if (!spreadsheetId || !clientEmail || !privateKey) {
-            showMessage('❌ الرجاء إدخال جميع البيانات');
-            return;
-        }
+        if (!apiUrl) { showMessage('❌ الرجاء إدخال رابط التطبيق'); return; }
         showMessage('⏳ جاري المزامنة...');
-        document.getElementById('status').innerHTML = '⏳ جاري...';
+        
+        let data = {
+            emergencyBalance: 9988,
+            totalLent: 139900,
+            members: [],
+            loans: []
+        };
         
         try {
-            let jwt = generateJWT();
-            
-            let tokenRes = await fetch('https://oauth2.googleapis.com/token', {
+            let response = await fetch(apiUrl, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${jwt}`
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
             });
-            let tokenData = await tokenRes.json();
-            
-            if (!tokenData.access_token) {
-                throw new Error(tokenData.error_description || 'فشل الحصول على التوكن');
-            }
-            
-            let accessToken = tokenData.access_token;
-            
-            // حفظ بيانات تجريبية للاختبار
-            let testData = [['البيان', 'القيمة'], ['بند الطوارئ', emergencyBalance], ['إجمالي المُقرض', totalLent]];
-            
-            let response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/Test!A1:B?valueInputOption=RAW`, {
-                method: 'PUT',
-                headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ values: testData, majorDimension: 'ROWS' })
-            });
-            
-            if (!response.ok) {
-                let error = await response.json();
-                throw new Error(error.error?.message || 'فشل الحفظ');
-            }
-            
-            document.getElementById('status').innerHTML = '✅ تمت المزامنة بنجاح!';
-            showMessage('✅ تمت المزامنة إلى السحابة');
+            showMessage('✅ تمت المزامنة');
+            document.getElementById('status').innerHTML = '✅ تم المزامنة';
         } catch(err) {
             showMessage('❌ خطأ: ' + err.message);
-            document.getElementById('status').innerHTML = '❌ ' + err.message;
         }
     }
 
     async function syncFromCloud() {
-        if (!spreadsheetId || !clientEmail || !privateKey) {
-            showMessage('❌ الرجاء إدخال جميع البيانات');
-            return;
-        }
+        if (!apiUrl) { showMessage('❌ الرجاء إدخال رابط التطبيق'); return; }
         showMessage('⏳ جاري التحميل...');
         
         try {
-            let jwt = generateJWT();
-            
-            let tokenRes = await fetch('https://oauth2.googleapis.com/token', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${jwt}`
-            });
-            let tokenData = await tokenRes.json();
-            
-            if (!tokenData.access_token) {
-                throw new Error(tokenData.error_description || 'فشل الحصول على التوكن');
-            }
-            
-            let accessToken = tokenData.access_token;
-            
-            let response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/Test!A:B`, {
-                headers: { 'Authorization': `Bearer ${accessToken}` }
-            });
+            let response = await fetch(apiUrl);
             let data = await response.json();
             
-            if (data.values && data.values.length > 1) {
-                for (let i = 1; i < data.values.length; i++) {
-                    if (data.values[i][0] === 'بند الطوارئ') emergencyBalance = parseFloat(data.values[i][1]) || 9988;
-                    if (data.values[i][0] === 'إجمالي المُقرض') totalLent = parseFloat(data.values[i][1]) || 139900;
-                }
-                showMessage('✅ تم التحميل من السحابة');
-                updateStatsDisplay();
-            } else {
-                showMessage('⚠️ لا توجد بيانات في السحابة');
-            }
+            document.getElementById('emergencyBalance').innerHTML = (data.emergencyBalance || 9988).toLocaleString();
+            document.getElementById('totalLent').innerHTML = (data.totalLent || 139900).toLocaleString();
+            
+            showMessage('✅ تم التحميل من السحابة');
             document.getElementById('status').innerHTML = '✅ تم التحميل';
         } catch(err) {
             showMessage('❌ خطأ: ' + err.message);
-            document.getElementById('status').innerHTML = '❌ ' + err.message;
         }
-    }
-
-    function saveSettings() {
-        spreadsheetId = document.getElementById('spreadsheetId').value;
-        clientEmail = document.getElementById('clientEmail').value;
-        privateKey = document.getElementById('privateKey').value;
-        localStorage.setItem('spreadsheetId', spreadsheetId);
-        localStorage.setItem('clientEmail', clientEmail);
-        localStorage.setItem('privateKey', privateKey);
-        showMessage('✅ تم حفظ الإعدادات');
-    }
-
-    function updateStatsDisplay() {
-        document.getElementById('stats').innerHTML = `
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-                <div style="background:#f5f0e6; padding:10px; border-radius:10px; text-align:center;">
-                    <div>بند الطوارئ</div>
-                    <div style="font-size:24px; font-weight:bold;">${emergencyBalance.toLocaleString()}</div>
-                </div>
-                <div style="background:#f5f0e6; padding:10px; border-radius:10px; text-align:center;">
-                    <div>إجمالي المُقرض</div>
-                    <div style="font-size:24px; font-weight:bold;">${totalLent.toLocaleString()}</div>
-                </div>
-            </div>
-        `;
     }
 
     function showMessage(msg) {
@@ -210,11 +108,7 @@
         setTimeout(() => toast.remove(), 2000);
     }
 
-    // تحميل الإعدادات المحفوظة
-    document.getElementById('spreadsheetId').value = spreadsheetId;
-    document.getElementById('clientEmail').value = clientEmail;
-    document.getElementById('privateKey').value = privateKey;
-    updateStatsDisplay();
+    document.getElementById('apiUrl').value = apiUrl;
 </script>
 </body>
 </html>
