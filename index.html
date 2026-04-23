@@ -153,7 +153,7 @@
         <div class="home-footer"><div class="developer">Ahmed K.Alrushaydan</div><div class="version">version 1.0.0</div></div>
     </div>
 
-    <!-- صفحة المزامنة السحابية (بدون رمز) -->
+    <!-- صفحة المزامنة السحابية -->
     <div id="cloudSyncPage" class="page">
         <div class="page-header">
             <h2>☁️ المزامنة السحابية</h2>
@@ -163,10 +163,10 @@
             <h3>🔗 إعدادات الرابط</h3>
             <div class="form-group">
                 <label>رابط Google Apps Script:</label>
-                <input type="text" id="apiUrlCloud" placeholder="أدخل رابط تطبيق Google Apps Script">
+                <input type="text" id="apiUrlCloud" placeholder="https://script.google.com/macros/s/.../exec">
             </div>
             <button class="btn btn-gold" onclick="saveApiUrlCloud()">💾 حفظ الرابط</button>
-            <div id="cloudSyncStatus" style="margin-top:10px; font-size:12px; text-align:center;"></div>
+            <div id="cloudSyncStatus" style="margin-top:10px; font-size:12px; text-align:center; color:#2e7d32;"></div>
         </div>
         <div class="card">
             <h3>📤📥 عمليات المزامنة</h3>
@@ -412,6 +412,7 @@
         try {
             let response = await fetch(apiUrl);
             let data = await response.json();
+            
             if (data.members) members = data.members;
             if (data.loans) loans = data.loans;
             if (data.emergencyBalance !== undefined) emergencyBalance = data.emergencyBalance;
@@ -424,11 +425,15 @@
             if (data.loanPaymentsHistory) loanPaymentsHistory = data.loanPaymentsHistory;
             if (data.withdrawalsHistory) withdrawalsHistory = data.withdrawalsHistory;
             if (data.customStats) { customStats = data.customStats; saveCustomStats(); }
+            
             saveAllData();
             refreshAll();
             showMessage('✅ تم تحميل أحدث البيانات من السحابة');
             document.getElementById('cloudSyncStatus').innerHTML = '✅ تم تحميل البيانات';
-        } catch(err) { showMessage('❌ خطأ في التحميل: ' + err.message); }
+        } catch(err) {
+            showMessage('❌ خطأ في التحميل: ' + err.message);
+            document.getElementById('cloudSyncStatus').innerHTML = '❌ فشل التحميل: ' + err.message;
+        }
     }
 
     // ========== دوال الزكاة ==========
