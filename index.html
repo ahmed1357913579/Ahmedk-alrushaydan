@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>صندوق عائلة الرشيدان</title>
+    <title>صندوق عائلة الرشيدان - سحابي</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f0e6; min-height: 100vh; color: #1a2a4a; padding-bottom: 70px; }
@@ -166,14 +166,13 @@
         </div>
     </div>
 
-    <!-- صفحة الإحصائيات (مع وضع التعديل) -->
+    <!-- صفحة الإحصائيات -->
     <div id="statsPage" class="page">
         <div class="page-header">
             <h2>📊 الإحصائيات</h2>
             <button class="btn-small btn-dark" onclick="checkStatsEditAccess()" style="margin-top:5px; width:auto;">✏️ تعديل الإحصائيات</button>
         </div>
         
-        <!-- وضع العرض -->
         <div id="statsDisplayMode">
             <div class="stats-grid">
                 <div class="stat-card"><div class="stat-label">الرصيد الإجمالي الحالي</div><div class="stat-value" id="totalBalance">0</div><div class="stat-label">ريال</div></div>
@@ -185,7 +184,6 @@
             </div>
         </div>
         
-        <!-- وضع التعديل -->
         <div id="statsEditMode" style="display:none;">
             <div class="stats-grid">
                 <div class="stat-card"><div class="stat-label">الرصيد الإجمالي الحالي</div><input type="number" id="editTotalBalance" class="stat-input"><div class="stat-label">ريال</div></div>
@@ -208,7 +206,6 @@
     <div id="adminPage" class="page">
         <div class="page-header"><h2>⚙️ لوحة الإدارة</h2></div>
 
-        <!-- المزامنة السحابية -->
         <div class="card">
             <h3>☁️ المزامنة السحابية</h3>
             <input type="text" id="apiUrl" placeholder="رابط Google Apps Script">
@@ -218,6 +215,7 @@
                 <button class="btn btn-warning" onclick="syncFromCloud()">📥 تحميل من السحابة</button>
             </div>
             <div id="cloudStatus" style="margin-top:10px; font-size:12px; text-align:center;"></div>
+            <p style="font-size:11px; margin-top:10px; opacity:0.7;">🔹 المسؤول: يعدل البيانات ثم يضغط "مزامنة للسحابة"<br>🔹 أفراد العائلة: يضغطون "تحميل من السحابة" لرؤية آخر التحديثات</p>
         </div>
 
         <div class="card"><h3>➕ إضافة عضو</h3><input type="text" id="newMemberName" placeholder="الاسم الكامل"><input type="tel" id="newMemberPhone" placeholder="رقم الجوال"><button class="btn btn-gold" onclick="addMember()">إضافة عضو</button></div>
@@ -262,12 +260,61 @@
     let subscriptionsHistory = [];
     let loanPaymentsHistory = [];
 
+    // متغيرات الإحصائيات المعدلة (تزامن سحابي)
+    let customStats = {
+        totalBalance: null,
+        totalLoansAmount: null,
+        availableAmount: null,
+        emergencyBalance: null,
+        totalLent: null,
+        memberCount: null
+    };
+
+    // ========== حساب الإحصائيات ==========
+    function calculateStats() {
+        let originalTotalPaid = members.reduce((s,m) => s + m.totalPaid, 0);
+        let originalTotalRemain = loans.reduce((s,l) => s + l.remaining, 0);
+        let originalAvailable = originalTotalPaid - originalTotalRemain - emergencyBalance;
+        
+        return {
+            totalBalance: customStats.totalBalance !== null ? customStats.totalBalance : originalTotalPaid,
+            totalLoansAmount: customStats.totalLoansAmount !== null ? customStats.totalLoansAmount : originalTotalRemain,
+            availableAmount: customStats.availableAmount !== null ? customStats.availableAmount : originalAvailable,
+            emergencyBalance: customStats.emergencyBalance !== null ? customStats.emergencyBalance : emergencyBalance,
+            totalLent: customStats.totalLent !== null ? customStats.totalLent : totalLent,
+            memberCount: customStats.memberCount !== null ? customStats.memberCount : members.length
+        };
+    }
+    
+    function updateStatsDisplay() {
+        let stats = calculateStats();
+        document.getElementById('totalBalance').innerHTML = stats.totalBalance.toLocaleString();
+        document.getElementById('totalLoansAmount').innerHTML = stats.totalLoansAmount.toLocaleString();
+        document.getElementById('availableAmount').innerHTML = stats.availableAmount.toLocaleString();
+        document.getElementById('statsEmergency').innerHTML = stats.emergencyBalance.toLocaleString();
+        document.getElementById('totalLent').innerHTML = stats.totalLent.toLocaleString();
+        document.getElementById('memberCount').innerHTML = stats.memberCount;
+        document.getElementById('emergencyBalance').innerHTML = stats.emergencyBalance.toLocaleString();
+    }
+    
+    function saveCustomStats() {
+        localStorage.setItem('customStats', JSON.stringify(customStats));
+    }
+    
+    function loadCustomStats() {
+        let saved = localStorage.getItem('customStats');
+        if (saved) {
+            customStats = JSON.parse(saved);
+        }
+    }
+
     // ========== دوال السحابة ==========
     async function syncToCloud() {
         if (!apiUrl) { showMessage('❌ الرجاء إدخال رابط التطبيق'); return; }
         showMessage('⏳ جاري المزامنة...');
         document.getElementById('cloudStatus').innerHTML = '⏳ جاري المزامنة...';
         
+        let stats = calculateStats();
         let data = {
             members: members,
             loans: loans,
@@ -276,7 +323,15 @@
             totalLent: totalLent,
             adminPhones: adminPhones,
             subscriptionsHistory: subscriptionsHistory,
-            loanPaymentsHistory: loanPaymentsHistory
+            loanPaymentsHistory: loanPaymentsHistory,
+            customStats: {
+                totalBalance: stats.totalBalance,
+                totalLoansAmount: stats.totalLoansAmount,
+                availableAmount: stats.availableAmount,
+                emergencyBalance: stats.emergencyBalance,
+                totalLent: stats.totalLent,
+                memberCount: stats.memberCount
+            }
         };
         
         try {
@@ -311,6 +366,15 @@
             if (data.adminPhones) adminPhones = data.adminPhones;
             if (data.subscriptionsHistory) subscriptionsHistory = data.subscriptionsHistory;
             if (data.loanPaymentsHistory) loanPaymentsHistory = data.loanPaymentsHistory;
+            if (data.customStats) {
+                customStats.totalBalance = data.customStats.totalBalance;
+                customStats.totalLoansAmount = data.customStats.totalLoansAmount;
+                customStats.availableAmount = data.customStats.availableAmount;
+                customStats.emergencyBalance = data.customStats.emergencyBalance;
+                customStats.totalLent = data.customStats.totalLent;
+                customStats.memberCount = data.customStats.memberCount;
+                saveCustomStats();
+            }
             
             saveAllData();
             refreshAll();
@@ -338,6 +402,7 @@
         localStorage.setItem('family_total_lent', totalLent);
         localStorage.setItem('family_subscriptions_history', JSON.stringify(subscriptionsHistory));
         localStorage.setItem('family_loan_payments_history', JSON.stringify(loanPaymentsHistory));
+        saveCustomStats();
     }
     
     function showMessage(msg) {
@@ -353,7 +418,6 @@
         displayLoans();
         updateStatsDisplay();
         updateHomeCounts();
-        updateEmergencyDisplay();
         if (document.getElementById('subscriptionsPage') && document.getElementById('subscriptionsPage').classList.contains('active')) {
             displaySubscriptionsHistory();
             displayLoanPaymentsHistory();
@@ -378,29 +442,13 @@
             document.getElementById('apiUrl').value = apiUrl;
         }
         updateHomeCounts();
-        updateEmergencyDisplay();
     }
     
     function updateHomeCounts() {
-        document.getElementById('homeMemberCount').innerHTML = members.length + ' عضو';
+        let stats = calculateStats();
+        document.getElementById('homeMemberCount').innerHTML = stats.memberCount + ' عضو';
         let activeLoans = loans.filter(l => l.remaining > 0).length;
         document.getElementById('homeLoanCount').innerHTML = activeLoans + ' قرض';
-    }
-    
-    function updateEmergencyDisplay() {
-        document.getElementById('emergencyBalance').innerHTML = emergencyBalance.toLocaleString();
-        document.getElementById('statsEmergency').innerHTML = emergencyBalance.toLocaleString();
-    }
-    
-    function updateStatsDisplay() {
-        let totalPaid = members.reduce((s,m) => s + m.totalPaid, 0);
-        let totalRemain = loans.reduce((s,l) => s + l.remaining, 0);
-        let available = totalPaid - totalRemain - emergencyBalance;
-        document.getElementById('totalBalance').innerHTML = totalPaid.toLocaleString();
-        document.getElementById('totalLoansAmount').innerHTML = totalRemain.toLocaleString();
-        document.getElementById('availableAmount').innerHTML = available.toLocaleString();
-        document.getElementById('totalLent').innerHTML = totalLent.toLocaleString();
-        document.getElementById('memberCount').innerHTML = members.length;
     }
     
     function displayMembers() {
@@ -443,6 +491,7 @@
         loan.remaining = Math.max(0, loan.remaining - amount);
         saveAllData();
         refreshAll();
+        updateStatsDisplay();
         document.getElementById('repaymentAmount').value = '';
         closeModal();
         showMessage(`✅ تم تسديد ${amount.toLocaleString()} ريال`);
@@ -476,26 +525,26 @@
         container.innerHTML = loanPaymentsHistory.map((log, i) => `<div class="history-item"><div>📅 ${log.date} | ${log.memberName}<br>💰 ${log.amount.toLocaleString()} ريال | متبقي: ${log.remainingAfter.toLocaleString()}</div><button onclick="undoLoanPayment(${i})" style="background:#dc3545;color:white;border:none;padding:5px 10px;border-radius:8px">↩️ تراجع</button></div>`).join('');
     }
     
-    function undoSubscription(i) { let log = subscriptionsHistory[i]; let m = members.find(m=>m.id==log.memberId); if(m) m.totalPaid -= log.amount; subscriptionsHistory.splice(i,1); saveAllData(); refreshAll(); showMessage('تم التراجع'); }
-    function undoLoanPayment(i) { let log = loanPaymentsHistory[i]; let loan = loans.find(l=>l.id==log.loanId); if(loan) loan.remaining += log.amount; loanPaymentsHistory.splice(i,1); saveAllData(); refreshAll(); showMessage('تم التراجع'); }
+    function undoSubscription(i) { let log = subscriptionsHistory[i]; let m = members.find(m=>m.id==log.memberId); if(m) m.totalPaid -= log.amount; subscriptionsHistory.splice(i,1); saveAllData(); refreshAll(); updateStatsDisplay(); showMessage('تم التراجع'); }
+    function undoLoanPayment(i) { let log = loanPaymentsHistory[i]; let loan = loans.find(l=>l.id==log.loanId); if(loan) loan.remaining += log.amount; loanPaymentsHistory.splice(i,1); saveAllData(); refreshAll(); updateStatsDisplay(); showMessage('تم التراجع'); }
     
-    function recordMemberSubscription() { let memberId = document.getElementById('subMemberSelect').value; let amount = parseFloat(document.getElementById('subAmount').value) || 200; let date = document.getElementById('subDate').value || new Date().toISOString().split('T')[0]; if(!memberId) { showMessage('❌ اختر العضو'); return; } let m = members.find(m=>m.id==memberId); m.totalPaid += amount; subscriptionsHistory.push({date, memberId, memberName:m.name, amount}); saveAllData(); refreshAll(); showMessage(`✅ تم تسجيل اشتراك ${amount.toLocaleString()} ريال للعضو ${m.name}`); document.getElementById('subAmount').value=''; }
-    function makeLoanPayment() { let memberId = document.getElementById('loanPaymentMember').value; let date = document.getElementById('loanPaymentDate').value || new Date().toISOString().split('T')[0]; if(!memberId) { showMessage('❌ اختر العضو'); return; } let loan = loans.find(l=>l.memberId==memberId && l.remaining>0); if(!loan) { showMessage('❌ لا يوجد قرض نشط'); return; } let amount = loan.monthlyPayment; loan.remaining = Math.max(0, loan.remaining - amount); loanPaymentsHistory.push({date, memberId, memberName:loan.memberName, amount, remainingAfter:loan.remaining, loanId:loan.id}); saveAllData(); refreshAll(); showMessage(`✅ تم سداد قسط ${amount.toLocaleString()} ريال للعضو ${loan.memberName}`); document.getElementById('loanPaymentDate').value=''; }
+    function recordMemberSubscription() { let memberId = document.getElementById('subMemberSelect').value; let amount = parseFloat(document.getElementById('subAmount').value) || 200; let date = document.getElementById('subDate').value || new Date().toISOString().split('T')[0]; if(!memberId) { showMessage('❌ اختر العضو'); return; } let m = members.find(m=>m.id==memberId); m.totalPaid += amount; subscriptionsHistory.push({date, memberId, memberName:m.name, amount}); saveAllData(); refreshAll(); updateStatsDisplay(); showMessage(`✅ تم تسجيل اشتراك ${amount.toLocaleString()} ريال للعضو ${m.name}`); document.getElementById('subAmount').value=''; }
+    function makeLoanPayment() { let memberId = document.getElementById('loanPaymentMember').value; let date = document.getElementById('loanPaymentDate').value || new Date().toISOString().split('T')[0]; if(!memberId) { showMessage('❌ اختر العضو'); return; } let loan = loans.find(l=>l.memberId==memberId && l.remaining>0); if(!loan) { showMessage('❌ لا يوجد قرض نشط'); return; } let amount = loan.monthlyPayment; loan.remaining = Math.max(0, loan.remaining - amount); loanPaymentsHistory.push({date, memberId, memberName:loan.memberName, amount, remainingAfter:loan.remaining, loanId:loan.id}); saveAllData(); refreshAll(); updateStatsDisplay(); showMessage(`✅ تم سداد قسط ${amount.toLocaleString()} ريال للعضو ${loan.memberName}`); document.getElementById('loanPaymentDate').value=''; }
     
-    function addMember() { let name = document.getElementById('newMemberName').value; let phone = document.getElementById('newMemberPhone').value; if(!name||!phone) { showMessage('❌ أدخل الاسم والجوال'); return; } let newId = Math.max(...members.map(m=>m.id),0)+1; members.push({id:newId, name, phone, joinDate:new Date().toISOString().split('T')[0], totalPaid:0, monthlySub:200}); saveAllData(); refreshAll(); showMessage(`✅ تم إضافة ${name}`); document.getElementById('newMemberName').value=''; document.getElementById('newMemberPhone').value=''; }
-    function addLoan() { let memberId = document.getElementById('loanMember').value; let amount = parseFloat(document.getElementById('loanAmount').value); let installment = parseFloat(document.getElementById('loanInstallment').value); let loanDate = document.getElementById('loanDate').value || new Date().toISOString().split('T')[0]; if(!memberId||!amount||!installment) { showMessage('❌ املأ جميع الحقول'); return; } let m = members.find(m=>m.id==memberId); let newId = Math.max(...loans.map(l=>l.id),0)+1; let nextDate = new Date(); nextDate.setMonth(nextDate.getMonth()+1); loans.push({id:newId, memberId:parseInt(memberId), memberName:m.name, amount, monthlyPayment:installment, remaining:amount, loanDate, nextDueDate:nextDate.toISOString().split('T')[0]}); totalLent += amount; saveAllData(); refreshAll(); showMessage(`✅ تم إضافة قرض بقيمة ${amount.toLocaleString()} ريال`); document.getElementById('loanAmount').value=''; document.getElementById('loanInstallment').value=''; document.getElementById('loanDate').value=''; }
+    function addMember() { let name = document.getElementById('newMemberName').value; let phone = document.getElementById('newMemberPhone').value; if(!name||!phone) { showMessage('❌ أدخل الاسم والجوال'); return; } let newId = Math.max(...members.map(m=>m.id),0)+1; members.push({id:newId, name, phone, joinDate:new Date().toISOString().split('T')[0], totalPaid:0, monthlySub:200}); saveAllData(); refreshAll(); updateStatsDisplay(); showMessage(`✅ تم إضافة ${name}`); document.getElementById('newMemberName').value=''; document.getElementById('newMemberPhone').value=''; }
+    function addLoan() { let memberId = document.getElementById('loanMember').value; let amount = parseFloat(document.getElementById('loanAmount').value); let installment = parseFloat(document.getElementById('loanInstallment').value); let loanDate = document.getElementById('loanDate').value || new Date().toISOString().split('T')[0]; if(!memberId||!amount||!installment) { showMessage('❌ املأ جميع الحقول'); return; } let m = members.find(m=>m.id==memberId); let newId = Math.max(...loans.map(l=>l.id),0)+1; let nextDate = new Date(); nextDate.setMonth(nextDate.getMonth()+1); loans.push({id:newId, memberId:parseInt(memberId), memberName:m.name, amount, monthlyPayment:installment, remaining:amount, loanDate, nextDueDate:nextDate.toISOString().split('T')[0]}); totalLent += amount; saveAllData(); refreshAll(); updateStatsDisplay(); showMessage(`✅ تم إضافة قرض بقيمة ${amount.toLocaleString()} ريال`); document.getElementById('loanAmount').value=''; document.getElementById('loanInstallment').value=''; document.getElementById('loanDate').value=''; }
     function savePhones() { adminPhones = { phone1: document.getElementById('phone1').value, phone2: document.getElementById('phone2').value, phone3: document.getElementById('phone3').value }; saveAllData(); showMessage('✅ تم حفظ الأرقام'); }
     function openLoanRequest(name, phone) { let msg = `السلام عليكم، أنا ${name} أود طلب قرض. رقمي: ${phone}`; document.getElementById('whatsappLinks').innerHTML = `<a href="https://wa.me/${adminPhones.phone1}?text=${encodeURIComponent(msg)}" class="whatsapp-link">📱 المسؤول الأول - ${adminPhones.phone1}</a><a href="https://wa.me/${adminPhones.phone2}?text=${encodeURIComponent(msg)}" class="whatsapp-link">📱 المسؤول الثاني - ${adminPhones.phone2}</a><a href="https://wa.me/${adminPhones.phone3}?text=${encodeURIComponent(msg)}" class="whatsapp-link">📱 المسؤول الثالث - ${adminPhones.phone3}</a>`; document.getElementById('loanModal').style.display='flex'; }
     function showEmergencySupport() { updateAdminSelects(); document.getElementById('emergencySupportModal').style.display='flex'; }
-    function confirmSupport() { let memberId = document.getElementById('supportMember').value; let amount = parseFloat(document.getElementById('supportAmount').value); let reason = document.getElementById('supportReason').value; let type = document.querySelector('input[name="supportType"]:checked').value; if(!memberId||!amount) { showMessage('❌ املأ الحقول'); return; } let m = members.find(m=>m.id==memberId); if(amount>emergencyBalance) { showMessage('❌ المبلغ أكبر من رصيد الطوارئ'); return; } emergencyBalance -= amount; emergencyLog.unshift({date:new Date().toLocaleDateString('ar-SA'), memberName:m.name, amount, type:type==='refundable'?'🔄 دعم مسترد':'❌ دعم غير مسترد', reason:reason||'بدون سبب'}); saveAllData(); refreshAll(); closeModal(); showMessage(`✅ تم صرف ${amount.toLocaleString()} ريال للعضو ${m.name}`); }
+    function confirmSupport() { let memberId = document.getElementById('supportMember').value; let amount = parseFloat(document.getElementById('supportAmount').value); let reason = document.getElementById('supportReason').value; let type = document.querySelector('input[name="supportType"]:checked').value; if(!memberId||!amount) { showMessage('❌ املأ الحقول'); return; } let m = members.find(m=>m.id==memberId); if(amount>emergencyBalance) { showMessage('❌ المبلغ أكبر من رصيد الطوارئ'); return; } emergencyBalance -= amount; emergencyLog.unshift({date:new Date().toLocaleDateString('ar-SA'), memberName:m.name, amount, type:type==='refundable'?'🔄 دعم مسترد':'❌ دعم غير مسترد', reason:reason||'بدون سبب'}); saveAllData(); refreshAll(); updateStatsDisplay(); closeModal(); showMessage(`✅ تم صرف ${amount.toLocaleString()} ريال للعضو ${m.name}`); }
     function showEmergencyPay() { document.getElementById('emergencyPayModal').style.display='flex'; }
-    function confirmEmergencyAdd() { let amount = parseFloat(document.getElementById('emergencyAddAmount').value); if(!amount) { showMessage('❌ أدخل المبلغ'); return; } emergencyBalance += amount; saveAllData(); refreshAll(); closeModal(); showMessage(`✅ تم إضافة ${amount.toLocaleString()} ريال للطوارئ`); }
+    function confirmEmergencyAdd() { let amount = parseFloat(document.getElementById('emergencyAddAmount').value); if(!amount) { showMessage('❌ أدخل المبلغ'); return; } emergencyBalance += amount; saveAllData(); refreshAll(); updateStatsDisplay(); closeModal(); showMessage(`✅ تم إضافة ${amount.toLocaleString()} ريال للطوارئ`); }
     function showEmergencyLog() { document.getElementById('emergencyLogList').innerHTML = emergencyLog.length===0 ? '<p style="text-align:center">لا توجد سجلات</p>' : emergencyLog.map(l=>`<div class="support-log"><div><span>📅 ${l.date}</span> | <span>${l.type}</span></div><div>👤 ${l.memberName}</div><div>💰 ${l.amount.toLocaleString()} ريال</div><div>📝 ${l.reason}</div></div>`).join(''); document.getElementById('emergencyLogModal').style.display='flex'; }
     function openEditMember(id) { pendingMemberId = id; document.getElementById('codeModal').style.display='flex'; document.getElementById('secretCode').focus(); pendingAction='editMember'; }
     function showEditMemberModal() { let m = members.find(m=>m.id==pendingMemberId); if(m) { document.getElementById('editMemberId').value=m.id; document.getElementById('editMemberName').value=m.name; document.getElementById('editMemberPhone').value=m.phone; document.getElementById('editMemberMonthlySub').value=m.monthlySub; document.getElementById('editMemberTotalPaid').value=m.totalPaid; document.getElementById('editMemberModal').style.display='flex'; } pendingMemberId=null; }
-    function saveMemberEdit() { let id = parseInt(document.getElementById('editMemberId').value); let name = document.getElementById('editMemberName').value; let phone = document.getElementById('editMemberPhone').value; let sub = parseFloat(document.getElementById('editMemberMonthlySub').value); let paid = parseFloat(document.getElementById('editMemberTotalPaid').value); let m = members.find(m=>m.id==id); if(m) { m.name=name; m.phone=phone; m.monthlySub=sub; m.totalPaid=paid; saveAllData(); refreshAll(); showMessage('✅ تم تعديل العضو'); closeModal(); } }
+    function saveMemberEdit() { let id = parseInt(document.getElementById('editMemberId').value); let name = document.getElementById('editMemberName').value; let phone = document.getElementById('editMemberPhone').value; let sub = parseFloat(document.getElementById('editMemberMonthlySub').value); let paid = parseFloat(document.getElementById('editMemberTotalPaid').value); let m = members.find(m=>m.id==id); if(m) { m.name=name; m.phone=phone; m.monthlySub=sub; m.totalPaid=paid; saveAllData(); refreshAll(); updateStatsDisplay(); showMessage('✅ تم تعديل العضو'); closeModal(); } }
     
-    // ========== دوال تعديل الإحصائيات ==========
+    // ========== دوال تعديل الإحصائيات (مع حفظ في السحابة) ==========
     function checkStatsEditAccess() {
         document.getElementById('codeModal').style.display = 'flex';
         document.getElementById('secretCode').value = '';
@@ -504,43 +553,44 @@
     }
     
     function openStatsEditMode() {
-        document.getElementById('editTotalBalance').value = parseFloat(document.getElementById('totalBalance').innerHTML.replace(/,/g, '')) || 0;
-        document.getElementById('editTotalLoansAmount').value = parseFloat(document.getElementById('totalLoansAmount').innerHTML.replace(/,/g, '')) || 0;
-        document.getElementById('editAvailableAmount').value = parseFloat(document.getElementById('availableAmount').innerHTML.replace(/,/g, '')) || 0;
-        document.getElementById('editStatsEmergency').value = parseFloat(document.getElementById('statsEmergency').innerHTML.replace(/,/g, '')) || 0;
-        document.getElementById('editTotalLent').value = parseFloat(document.getElementById('totalLent').innerHTML.replace(/,/g, '')) || 0;
-        document.getElementById('editMemberCount').value = parseFloat(document.getElementById('memberCount').innerHTML.replace(/,/g, '')) || 0;
+        let stats = calculateStats();
+        document.getElementById('editTotalBalance').value = stats.totalBalance;
+        document.getElementById('editTotalLoansAmount').value = stats.totalLoansAmount;
+        document.getElementById('editAvailableAmount').value = stats.availableAmount;
+        document.getElementById('editStatsEmergency').value = stats.emergencyBalance;
+        document.getElementById('editTotalLent').value = stats.totalLent;
+        document.getElementById('editMemberCount').value = stats.memberCount;
         
         document.getElementById('statsDisplayMode').style.display = 'none';
         document.getElementById('statsEditMode').style.display = 'block';
     }
     
     function saveStatsEdit() {
-        let newTotalBalance = parseFloat(document.getElementById('editTotalBalance').value) || 0;
-        let newTotalLoansAmount = parseFloat(document.getElementById('editTotalLoansAmount').value) || 0;
-        let newAvailableAmount = parseFloat(document.getElementById('editAvailableAmount').value) || 0;
-        let newEmergencyBalance = parseFloat(document.getElementById('editStatsEmergency').value) || 0;
-        let newTotalLent = parseFloat(document.getElementById('editTotalLent').value) || 0;
-        let newMemberCount = parseFloat(document.getElementById('editMemberCount').value) || 0;
+        // حفظ القيم المعدلة في customStats
+        customStats.totalBalance = parseFloat(document.getElementById('editTotalBalance').value) || 0;
+        customStats.totalLoansAmount = parseFloat(document.getElementById('editTotalLoansAmount').value) || 0;
+        customStats.availableAmount = parseFloat(document.getElementById('editAvailableAmount').value) || 0;
+        customStats.emergencyBalance = parseFloat(document.getElementById('editStatsEmergency').value) || 0;
+        customStats.totalLent = parseFloat(document.getElementById('editTotalLent').value) || 0;
+        customStats.memberCount = parseFloat(document.getElementById('editMemberCount').value) || 0;
         
-        emergencyBalance = newEmergencyBalance;
-        totalLent = newTotalLent;
+        // تحديث المتغيرات الأصلية
+        emergencyBalance = customStats.emergencyBalance;
+        totalLent = customStats.totalLent;
         
-        document.getElementById('totalBalance').innerHTML = newTotalBalance.toLocaleString();
-        document.getElementById('totalLoansAmount').innerHTML = newTotalLoansAmount.toLocaleString();
-        document.getElementById('availableAmount').innerHTML = newAvailableAmount.toLocaleString();
-        document.getElementById('statsEmergency').innerHTML = newEmergencyBalance.toLocaleString();
-        document.getElementById('totalLent').innerHTML = newTotalLent.toLocaleString();
-        document.getElementById('memberCount').innerHTML = newMemberCount;
-        
-        document.getElementById('emergencyBalance').innerHTML = newEmergencyBalance.toLocaleString();
-        
+        // حفظ في localStorage
+        saveCustomStats();
         saveAllData();
         
+        // تحديث العرض
+        updateStatsDisplay();
+        
+        // العودة إلى وضع العرض
         document.getElementById('statsDisplayMode').style.display = 'block';
         document.getElementById('statsEditMode').style.display = 'none';
         
-        showMessage('✅ تم حفظ التعديلات بنجاح');
+        showMessage('✅ تم حفظ التعديلات محلياً');
+        showMessage('📤 اضغط "مزامنة للسحابة" لمشاركة التعديلات مع الجميع');
     }
     
     function cancelStatsEdit() {
@@ -557,7 +607,7 @@
     function verifyCode() { if(document.getElementById('secretCode').value===SECRET_CODE) { document.getElementById('codeModal').style.display='none'; if(pendingAction==='admin') showPage('adminPage'); else if(pendingAction==='subscriptions') showPage('subscriptionsPage'); else if(pendingAction==='editMember') showEditMemberModal(); else if(pendingAction==='editStats') openStatsEditMode(); else if(pendingAction==='repayment') document.getElementById('repaymentModal').style.display='flex'; showMessage('✅ مرحباً بك'); } else showMessage('❌ الرمز غير صحيح'); }
     
     // ========== تصدير التقارير ==========
-    function exportToPDF() { const { jsPDF } = window.jspdf; let doc = new jsPDF({ orientation: 'landscape' }); doc.text('صندوق عائلة الرشيدان - تقرير شامل', 14, 15); doc.text(`التاريخ: ${new Date().toLocaleDateString('ar-EG')}`, 14, 25); let totalPaid = members.reduce((s,m)=>s+m.totalPaid,0); let totalRemain = loans.reduce((s,l)=>s+l.remaining,0); let available = totalPaid - totalRemain - emergencyBalance; let summary = [['البيان', 'القيمة (ريال)'], ['الرصيد الإجمالي الحالي', totalPaid.toLocaleString()], ['إجمالي القروض', totalRemain.toLocaleString()], ['المتاح للإقراض', available.toLocaleString()], ['بند الطوارئ', emergencyBalance.toLocaleString()], ['إجمالي المُقرض', totalLent.toLocaleString()], ['عدد الأعضاء', members.length.toString()]]; doc.autoTable({ head: [['الملخص المالي', '']], body: summary, startY: 35, styles: { fontSize: 8, halign: 'right' }, headStyles: { fillColor: [26, 42, 74] } }); let memberData = members.map(m => [m.name, m.phone, m.totalPaid.toLocaleString(), loans.filter(l=>l.memberId===m.id).reduce((s,l)=>s+l.remaining,0).toLocaleString()]); doc.autoTable({ head: [['اسم العضو', 'الجوال', 'إجمالي المدفوع', 'المتبقي']], body: memberData, startY: doc.lastAutoTable.finalY + 10, styles: { fontSize: 7, halign: 'right' }, headStyles: { fillColor: [26, 42, 74] } }); doc.save(`تقرير_الرشيدان_${new Date().toLocaleDateString()}.pdf`); showMessage('✅ تم تصدير PDF'); }
+    function exportToPDF() { const { jsPDF } = window.jspdf; let doc = new jsPDF({ orientation: 'landscape' }); doc.text('صندوق عائلة الرشيدان - تقرير شامل', 14, 15); doc.text(`التاريخ: ${new Date().toLocaleDateString('ar-EG')}`, 14, 25); let stats = calculateStats(); let summary = [['البيان', 'القيمة (ريال)'], ['الرصيد الإجمالي الحالي', stats.totalBalance.toLocaleString()], ['إجمالي القروض', stats.totalLoansAmount.toLocaleString()], ['المتاح للإقراض', stats.availableAmount.toLocaleString()], ['بند الطوارئ', stats.emergencyBalance.toLocaleString()], ['إجمالي المُقرض', stats.totalLent.toLocaleString()], ['عدد الأعضاء', stats.memberCount.toString()]]; doc.autoTable({ head: [['الملخص المالي', '']], body: summary, startY: 35, styles: { fontSize: 8, halign: 'right' }, headStyles: { fillColor: [26, 42, 74] } }); let memberData = members.map(m => [m.name, m.phone, m.totalPaid.toLocaleString(), loans.filter(l=>l.memberId===m.id).reduce((s,l)=>s+l.remaining,0).toLocaleString()]); doc.autoTable({ head: [['اسم العضو', 'الجوال', 'إجمالي المدفوع', 'المتبقي']], body: memberData, startY: doc.lastAutoTable.finalY + 10, styles: { fontSize: 7, halign: 'right' }, headStyles: { fillColor: [26, 42, 74] } }); doc.save(`تقرير_الرشيدان_${new Date().toLocaleDateString()}.pdf`); showMessage('✅ تم تصدير PDF'); }
     function exportToExcel() { let ws = XLSX.utils.json_to_sheet(members.map(m => ({ 'اسم العضو': m.name, 'الجوال': m.phone, 'تاريخ الاشتراك': m.joinDate, 'إجمالي المدفوع': m.totalPaid, 'المتبقي من القروض': loans.filter(l=>l.memberId===m.id).reduce((s,l)=>s+l.remaining,0) }))); let wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'الأعضاء'); XLSX.writeFile(wb, `تقرير_الرشيدان_${new Date().toLocaleDateString()}.xlsx`); showMessage('✅ تم تصدير Excel'); }
     
     // ========== تحميل البيانات الأولية ==========
@@ -611,6 +661,7 @@
         if(savedPhones) adminPhones = JSON.parse(savedPhones);
         if(savedTotalLent) totalLent = parseFloat(savedTotalLent);
         
+        loadCustomStats();
         saveAllData();
     }
     
