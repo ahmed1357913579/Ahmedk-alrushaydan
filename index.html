@@ -62,8 +62,8 @@
         .emergency-card, .zakat-card { background: #ffffff; border: 2px solid #1a2a4a; }
         .radio-group { display: flex; gap: 15px; justify-content: center; margin: 10px 0; }
         .radio-group label { display: flex; align-items: center; gap: 5px; cursor: pointer; color: #1a2a4a; }
-        .support-log, .zakat-log { background: #f5f0e6; border-radius: 10px; padding: 10px; margin-bottom: 8px; font-size: 12px; border-right: 3px solid #1a2a4a; }
-        .support-log span, .zakat-log span { color: #1a2a4a; font-weight: bold; }
+        .support-log, .zakat-log, .withdrawal-log { background: #f5f0e6; border-radius: 10px; padding: 10px; margin-bottom: 8px; font-size: 12px; border-right: 3px solid #1a2a4a; }
+        .support-log span, .zakat-log span, .withdrawal-log span { color: #1a2a4a; font-weight: bold; }
         .code-input { text-align: center; font-size: 24px; letter-spacing: 8px; direction: ltr; }
         .home-footer { text-align: center; padding: 20px; margin-top: 20px; border-top: 1px solid rgba(26,42,74,0.1); }
         .home-footer .developer { font-size: 12px; opacity: 0.7; }
@@ -76,7 +76,6 @@
         .member-checkbox-item input { width: auto; margin: 0; }
         .member-checkbox-item label { flex: 1; margin: 0; cursor: pointer; }
         .withdrawal-calculation { background: #e8e0d0; padding: 10px; border-radius: 10px; margin: 10px 0; text-align: right; }
-        .withdrawal-calculation p { margin: 5px 0; font-size: 13px; }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -156,8 +155,17 @@
         <div class="home-footer"><div class="developer">Ahmed K.Alrushaydan</div><div class="version">version 1.0.0</div></div>
     </div>
 
+    <!-- صفحة الأعضاء -->
+    <div id="membersPage" class="page">
+        <div class="page-header">
+            <h2>👥 الأعضاء</h2>
+            <button class="btn-small btn-dark" onclick="showWithdrawalLog()" style="margin-top:5px; width:auto;">📋 سجل المنسحبين</button>
+        </div>
+        <input type="text" id="searchMember" placeholder="🔍 بحث باسم العضو...">
+        <div id="membersList"></div>
+    </div>
+
     <!-- باقي الصفحات -->
-    <div id="membersPage" class="page"><div class="page-header"><h2>👥 الأعضاء</h2></div><input type="text" id="searchMember" placeholder="🔍 بحث باسم العضو..."><div id="membersList"></div></div>
     <div id="loansPage" class="page"><div class="page-header"><h2>🏦 القروض النشطة</h2></div><div id="loansList"></div></div>
     <div id="subscriptionsPage" class="page"><div class="page-header"><h2>📅 الاشتراكات</h2></div><div class="card"><h3>💰 تسجيل اشتراك للعضو</h3><select id="subMemberSelect"></select><input type="number" id="subAmount" placeholder="مبلغ الاشتراك (200)"><input type="date" id="subDate"><button class="btn btn-gold" onclick="recordMemberSubscription()">تسجيل اشتراك</button><button class="btn btn-success" onclick="recordAllSubscriptions()">📝 سداد اشتراكات لجميع الأعضاء</button></div><div id="subscriptionsHistoryList"></div><div class="card"><h3>🏦 سداد أقساط القروض</h3><select id="loanPaymentMember"></select><input type="date" id="loanPaymentDate"><button class="btn btn-gold" onclick="makeLoanPayment()">سداد قسط</button><button class="btn btn-success" onclick="payAllLoans()">💰 سداد أقساط جميع المقترضين</button></div><div id="loanPaymentsHistory"></div></div>
     <div id="statsPage" class="page"><div class="page-header"><h2>📊 الإحصائيات</h2><button class="btn-small btn-dark" onclick="checkStatsEditAccess()" style="margin-top:5px; width:auto;">✏️ تعديل الإحصائيات</button></div><div id="statsDisplayMode"><div class="stats-grid"><div class="stat-card"><div class="stat-label">الرصيد الإجمالي الحالي</div><div class="stat-value" id="totalBalance">0</div><div class="stat-label">ريال</div></div><div class="stat-card"><div class="stat-label">إجمالي المبالغ المقترضة</div><div class="stat-value" id="totalLoansAmount">0</div><div class="stat-label">ريال</div></div><div class="stat-card"><div class="stat-label">المتاح للإقراض</div><div class="stat-value" id="availableAmount">0</div><div class="stat-label">ريال</div></div><div class="stat-card"><div class="stat-label">بند الطوارئ</div><div class="stat-value" id="statsEmergency">0</div><div class="stat-label">ريال</div></div><div class="stat-card"><div class="stat-label">بند الزكاة</div><div class="stat-value" id="statsZakat">0</div><div class="stat-label">ريال</div></div><div class="stat-card"><div class="stat-label">إجمالي المُقرض</div><div class="stat-value" id="totalLent">0</div><div class="stat-label">ريال</div></div><div class="stat-card"><div class="stat-label">عدد الأعضاء</div><div class="stat-value" id="memberCount">0</div><div class="stat-label">عضو</div></div></div></div><div id="statsEditMode" style="display:none;"><div class="stats-grid"><div class="stat-card"><div class="stat-label">الرصيد الإجمالي الحالي</div><input type="number" id="editTotalBalance" class="stat-input"><div class="stat-label">ريال</div></div><div class="stat-card"><div class="stat-label">إجمالي المبالغ المقترضة</div><input type="number" id="editTotalLoansAmount" class="stat-input"><div class="stat-label">ريال</div></div><div class="stat-card"><div class="stat-label">المتاح للإقراض</div><input type="number" id="editAvailableAmount" class="stat-input"><div class="stat-label">ريال</div></div><div class="stat-card"><div class="stat-label">بند الطوارئ</div><input type="number" id="editStatsEmergency" class="stat-input"><div class="stat-label">ريال</div></div><div class="stat-card"><div class="stat-label">بند الزكاة</div><input type="number" id="editStatsZakat" class="stat-input"><div class="stat-label">ريال</div></div><div class="stat-card"><div class="stat-label">إجمالي المُقرض</div><input type="number" id="editTotalLent" class="stat-input"><div class="stat-label">ريال</div></div><div class="stat-card"><div class="stat-label">عدد الأعضاء</div><input type="number" id="editMemberCount" class="stat-input"><div class="stat-label">عضو</div></div></div><div class="flex-btns"><button class="btn btn-success" onclick="saveStatsEdit()">💾 حفظ التعديلات</button><button class="btn btn-warning" onclick="cancelStatsEdit()">❌ إلغاء</button></div></div><button class="btn btn-dark" onclick="refreshAll()" style="margin-top:10px;">🔄 تحديث</button></div>
@@ -170,6 +178,7 @@
         <div class="card"><h3>➕ إضافة عضو</h3><input type="text" id="newMemberName" placeholder="الاسم الكامل"><input type="tel" id="newMemberPhone" placeholder="رقم الجوال"><button class="btn btn-gold" onclick="addMember()">إضافة عضو</button></div>
         <div class="card"><h3>🏦 إضافة قرض</h3><select id="loanMember"></select><input type="number" id="loanAmount" placeholder="مبلغ القرض"><input type="number" id="loanInstallment" placeholder="القسط الشهري"><input type="date" id="loanDate"><button class="btn btn-gold" onclick="addLoan()">إضافة قرض</button></div>
         <div class="card"><h3>📞 أرقام المسؤولين</h3><input type="tel" id="phone1" placeholder="رقم المسؤول 1"><input type="tel" id="phone2" placeholder="رقم المسؤول 2"><input type="tel" id="phone3" placeholder="رقم المسؤول 3"><button class="btn btn-gold" onclick="savePhones()">حفظ</button></div>
+        <div class="card"><h3>👥 إعادة الأعضاء المنسحبين</h3><button class="btn btn-warning" onclick="restoreWithdrawnMembers()">🔄 إعادة الـ 16 عضو الأصليين</button><p style="font-size:11px; margin-top:5px; opacity:0.6;">سيتم إعادة جميع الأعضاء المنسحبين (16 عضو) كما كانت البيانات الأصلية</p></div>
         <div class="card"><h3>🗑️ إعادة تعيين</h3><button class="btn btn-red" onclick="resetAll()">مسح جميع البيانات</button></div>
     </div>
 
@@ -196,7 +205,7 @@
     </div>
 </div>
 
-<!-- نافذة حاسبة الانسحاب المتطورة -->
+<!-- نافذة حاسبة الانسحاب -->
 <div id="withdrawalModal" class="modal">
     <div class="modal-content">
         <h3>💵 حاسبة الانسحاب</h3>
@@ -206,6 +215,15 @@
             <button class="btn btn-success" onclick="confirmWithdrawal()">✅ تنفيذ الانسحاب</button>
             <button class="btn btn-dark" onclick="closeModal()">إلغاء</button>
         </div>
+    </div>
+</div>
+
+<!-- نافذة سجل المنسحبين -->
+<div id="withdrawalLogModal" class="modal">
+    <div class="modal-content">
+        <h3>📋 سجل المنسحبين</h3>
+        <div id="withdrawalLogList"></div>
+        <button class="btn btn-dark" onclick="closeModal()">إغلاق</button>
     </div>
 </div>
 
@@ -243,6 +261,38 @@
 <div id="repaymentModal" class="modal"><div class="modal-content"><h3>💰 تسديد قسط</h3><select id="repaymentMember"></select><input type="number" id="repaymentAmount"><button class="btn btn-gold" onclick="confirmRepayment()">تأكيد السداد</button><button class="btn btn-dark" onclick="closeModal()">إلغاء</button></div></div>
 
 <script>
+    // ========== البيانات الأساسية (الأعضاء الأصليين 16 عضو) ==========
+    const ORIGINAL_MEMBERS = [
+        {id:1, name:'محمد عبد المصلح الرشيدان', phone:'966501234567', joinDate:'2022-08-01', totalPaid:8400, monthlySub:200},
+        {id:2, name:'أحمد عبد المصلح الرشيدان', phone:'966501234568', joinDate:'2023-04-01', totalPaid:8400, monthlySub:200},
+        {id:3, name:'حمود عبد المصلح الرشيدان', phone:'966501234569', joinDate:'2022-08-01', totalPaid:8400, monthlySub:200},
+        {id:4, name:'عبد الله عبد المصلح الرشيدان', phone:'966501234570', joinDate:'2022-08-01', totalPaid:8400, monthlySub:200},
+        {id:5, name:'ماجد خليل الرشيدان', phone:'966501234571', joinDate:'2022-08-01', totalPaid:8400, monthlySub:200},
+        {id:6, name:'أمجد خليل الرشيدان', phone:'966501234572', joinDate:'2025-02-01', totalPaid:2600, monthlySub:200},
+        {id:7, name:'أحمد خليل الرشيدان', phone:'966501234573', joinDate:'2022-08-01', totalPaid:8400, monthlySub:200},
+        {id:8, name:'أيمن خليل الرشيدان', phone:'966501234574', joinDate:'2022-08-01', totalPaid:8400, monthlySub:200},
+        {id:9, name:'خالد محمد الرشيدان', phone:'966501234575', joinDate:'2022-08-01', totalPaid:8400, monthlySub:200},
+        {id:10, name:'سامي خالد الرشيدان', phone:'966501234576', joinDate:'2025-10-01', totalPaid:800, monthlySub:200},
+        {id:11, name:'عبد الله حمدان الرشيدان', phone:'966501234577', joinDate:'2022-08-01', totalPaid:8400, monthlySub:200},
+        {id:12, name:'محمد عبد الله الرشيدان', phone:'966501234578', joinDate:'2022-09-01', totalPaid:8400, monthlySub:200},
+        {id:13, name:'فيصل حمود الرشيدان', phone:'966501234579', joinDate:'2024-09-01', totalPaid:3600, monthlySub:200},
+        {id:14, name:'عمر عبد الله الرشيدان', phone:'966501234580', joinDate:'2024-09-01', totalPaid:3600, monthlySub:200},
+        {id:15, name:'محمد خالد محمد الرشيدان', phone:'966501234581', joinDate:'2024-09-01', totalPaid:3600, monthlySub:200},
+        {id:16, name:'نايف أيمن الرشيدان', phone:'966501234582', joinDate:'2024-09-01', totalPaid:3600, monthlySub:200}
+    ];
+
+    const ORIGINAL_LOANS = [
+        {id:1, memberId:3, memberName:'حمود عبد المصلح', amount:3000, monthlyPayment:200, remaining:2800, loanDate:'2024-03-01', nextDueDate:'2026-04-01'},
+        {id:2, memberId:5, memberName:'ماجد خليل', amount:12400, monthlyPayment:400, remaining:12000, loanDate:'2025-09-01', nextDueDate:'2026-04-01'},
+        {id:3, memberId:7, memberName:'أحمد خليل', amount:5800, monthlyPayment:200, remaining:5600, loanDate:'2024-07-01', nextDueDate:'2026-04-01'},
+        {id:4, memberId:9, memberName:'خالد محمد', amount:13900, monthlyPayment:400, remaining:13500, loanDate:'2025-11-01', nextDueDate:'2026-04-01'},
+        {id:5, memberId:11, memberName:'عبد الله حمدان', amount:14200, monthlyPayment:250, remaining:13950, loanDate:'2025-11-01', nextDueDate:'2026-04-01'},
+        {id:6, memberId:12, memberName:'محمد عبد الله', amount:1800, monthlyPayment:200, remaining:1600, loanDate:'2024-01-01', nextDueDate:'2026-04-01'},
+        {id:7, memberId:13, memberName:'فيصل حمود', amount:5000, monthlyPayment:200, remaining:4800, loanDate:'2025-11-01', nextDueDate:'2026-04-01'},
+        {id:8, memberId:15, memberName:'محمد خالد', amount:3600, monthlyPayment:200, remaining:3400, loanDate:'2025-08-01', nextDueDate:'2026-04-01'},
+        {id:9, memberId:16, memberName:'نايف أيمن', amount:6000, monthlyPayment:200, remaining:5800, loanDate:'2026-01-01', nextDueDate:'2026-04-01'}
+    ];
+
     // ========== إعدادات السحابة ==========
     let SECRET_CODE = localStorage.getItem('secretCode') || '13579';
     let pendingAction = null;
@@ -262,13 +312,32 @@
     let totalLent = 139900;
     let subscriptionsHistory = [];
     let loanPaymentsHistory = [];
-    let withdrawalsHistory = [];
+    let withdrawalsHistory = []; // سجل المنسحبين
 
     let customStats = { totalBalance: null, totalLoansAmount: null, availableAmount: null, emergencyBalance: null, zakatBalance: null, totalLent: null, memberCount: null };
 
-    // ========== حساب الزكاة المتراكمة (تحسب تلقائياً من الصندوق) ==========
+    // ========== إعادة الأعضاء الأصليين ==========
+    function restoreWithdrawnMembers() {
+        if (confirm('⚠️ هل أنت متأكد؟ سيتم إعادة جميع الأعضاء الـ 16 الأصليين وإعادة تعيين جميع القروض والبيانات الأصلية. سيتم فقدان التعديلات الحالية.')) {
+            members = JSON.parse(JSON.stringify(ORIGINAL_MEMBERS));
+            loans = JSON.parse(JSON.stringify(ORIGINAL_LOANS));
+            emergencyBalance = 9988;
+            emergencyLog = [];
+            zakatBalance = 0;
+            zakatLog = [];
+            totalLent = 139900;
+            subscriptionsHistory = [];
+            loanPaymentsHistory = [];
+            withdrawalsHistory = [];
+            customStats = { totalBalance: null, totalLoansAmount: null, availableAmount: null, emergencyBalance: null, zakatBalance: null, totalLent: null, memberCount: null };
+            saveAllData();
+            refreshAll();
+            showMessage('✅ تم إعادة الأعضاء الـ 16 الأصليين وجميع البيانات الأصلية');
+        }
+    }
+
+    // ========== حساب الزكاة المتراكمة ==========
     function calculateZakat() {
-        // الزكاة 2.5% من إجمالي الصندوق
         let totalFund = members.reduce((s,m) => s + m.totalPaid, 0) + emergencyBalance;
         let calculatedZakat = totalFund * 0.025;
         return Math.round(calculatedZakat);
@@ -334,26 +403,40 @@
         document.getElementById('zakatLogModal').style.display = 'flex';
     }
 
+    // ========== دوال سجل المنسحبين ==========
+    function showWithdrawalLog() {
+        let container = document.getElementById('withdrawalLogList');
+        if (withdrawalsHistory.length === 0) { container.innerHTML = '<p style="text-align:center">لا توجد سجلات انسحاب</p>'; }
+        else {
+            container.innerHTML = withdrawalsHistory.map((log, index) => `
+                <div class="withdrawal-log">
+                    <div><span>📅 ${log.date}</span> | <span>👤 ${log.memberName}</span></div>
+                    <div>💰 مبلغ الانسحاب: ${log.amount.toLocaleString()} ريال</div>
+                    <div>📊 تفاصيل: مبلغ الاشتراكات ${log.calculation.subscriptionAmount} - قروض ${log.calculation.loanDebt} - نصيب دعم غير مسترد ${Math.round(log.calculation.memberShareNonRefundable)} - نصيب زكاة ${Math.round(log.calculation.memberShareZakat)}</div>
+                    <button class="btn-small btn-warning" style="margin-top:5px;" onclick="undoWithdrawal(${index})">↩️ تراجع عن الانسحاب</button>
+                </div>
+            `).join('');
+        }
+        document.getElementById('withdrawalLogModal').style.display = 'flex';
+    }
+    
+    function undoWithdrawal(index) {
+        let log = withdrawalsHistory[index];
+        if (!log) { showMessage('❌ سجل غير موجود'); return; }
+        // لا يمكن التراجع بشكل كامل تلقائياً - نعرض رسالة
+        showMessage(`⚠️ لا يمكن التراجع عن انسحاب العضو ${log.memberName} تلقائياً. لإعادة العضو، استخدم زر "إعادة الأعضاء المنسحبين" في صفحة الإدارة.`);
+    }
+
     // ========== حاسبة الانسحاب المتطورة ==========
     function calculateWithdrawalAmount(member) {
-        // مبلغ الاشتراكات (totalPaid)
         let subscriptionAmount = member.totalPaid;
-        // مبلغ القرض المتبقي
         let loanDebt = loans.filter(l => l.memberId === member.id).reduce((s,l) => s + l.remaining, 0);
-        // إجمالي الدعم الغير مسترد من بند الطوارئ
         let nonRefundableSupport = emergencyLog.filter(l => l.type === '❌ دعم غير مسترد').reduce((s,l) => s + l.amount, 0);
-        // عدد الأعضاء الحاليين
         let memberCount = members.length;
-        // نصيب العضو من الدعم الغير مسترد
         let memberShareNonRefundable = memberCount > 0 ? nonRefundableSupport / memberCount : 0;
-        // إجمالي الزكاة
         let totalZakat = zakatBalance;
-        // نصيب العضو من الزكاة
         let memberShareZakat = memberCount > 0 ? totalZakat / memberCount : 0;
-        
-        // حق الانسحاب = (مبلغ الاشتراكات - مبلغ القرض) - (نصيب الدعم الغير مسترد) - (نصيب الزكاة)
         let withdrawal = subscriptionAmount - loanDebt - memberShareNonRefundable - memberShareZakat;
-        
         return {
             subscriptionAmount,
             loanDebt,
@@ -393,10 +476,23 @@
         let withdrawalAmount = calc.withdrawal;
         if (withdrawalAmount <= 0) { showMessage('❌ لا يوجد حق انسحاب لهذا العضو'); closeModal(); return; }
         
-        withdrawalsHistory.push({ date: new Date().toISOString().split('T')[0], memberId: member.id, memberName: member.name, amount: withdrawalAmount, calculation: calc });
+        withdrawalsHistory.push({ 
+            date: new Date().toISOString().split('T')[0], 
+            memberId: member.id, 
+            memberName: member.name, 
+            amount: withdrawalAmount, 
+            calculation: {
+                subscriptionAmount: calc.subscriptionAmount,
+                loanDebt: calc.loanDebt,
+                memberShareNonRefundable: calc.memberShareNonRefundable,
+                memberShareZakat: calc.memberShareZakat
+            }
+        });
         loans = loans.filter(l => l.memberId !== member.id);
         members = members.filter(m => m.id !== member.id);
-        saveAllData(); refreshAll(); closeModal();
+        saveAllData(); 
+        refreshAll(); 
+        closeModal();
         showMessage(`✅ تم تنفيذ انسحاب العضو ${member.name} بمبلغ ${withdrawalAmount.toLocaleString()} ريال`);
     }
 
@@ -732,37 +828,10 @@
         let savedWithdrawals = localStorage.getItem('family_withdrawals_history');
         
         if(savedMembers) members = JSON.parse(savedMembers);
-        else members = [
-            {id:1, name:'محمد عبد المصلح الرشيدان', phone:'966501234567', joinDate:'2022-08-01', totalPaid:8400, monthlySub:200},
-            {id:2, name:'أحمد عبد المصلح الرشيدان', phone:'966501234568', joinDate:'2023-04-01', totalPaid:8400, monthlySub:200},
-            {id:3, name:'حمود عبد المصلح الرشيدان', phone:'966501234569', joinDate:'2022-08-01', totalPaid:8400, monthlySub:200},
-            {id:4, name:'عبد الله عبد المصلح الرشيدان', phone:'966501234570', joinDate:'2022-08-01', totalPaid:8400, monthlySub:200},
-            {id:5, name:'ماجد خليل الرشيدان', phone:'966501234571', joinDate:'2022-08-01', totalPaid:8400, monthlySub:200},
-            {id:6, name:'أمجد خليل الرشيدان', phone:'966501234572', joinDate:'2025-02-01', totalPaid:2600, monthlySub:200},
-            {id:7, name:'أحمد خليل الرشيدان', phone:'966501234573', joinDate:'2022-08-01', totalPaid:8400, monthlySub:200},
-            {id:8, name:'أيمن خليل الرشيدان', phone:'966501234574', joinDate:'2022-08-01', totalPaid:8400, monthlySub:200},
-            {id:9, name:'خالد محمد الرشيدان', phone:'966501234575', joinDate:'2022-08-01', totalPaid:8400, monthlySub:200},
-            {id:10, name:'سامي خالد الرشيدان', phone:'966501234576', joinDate:'2025-10-01', totalPaid:800, monthlySub:200},
-            {id:11, name:'عبد الله حمدان الرشيدان', phone:'966501234577', joinDate:'2022-08-01', totalPaid:8400, monthlySub:200},
-            {id:12, name:'محمد عبد الله الرشيدان', phone:'966501234578', joinDate:'2022-09-01', totalPaid:8400, monthlySub:200},
-            {id:13, name:'فيصل حمود الرشيدان', phone:'966501234579', joinDate:'2024-09-01', totalPaid:3600, monthlySub:200},
-            {id:14, name:'عمر عبد الله الرشيدان', phone:'966501234580', joinDate:'2024-09-01', totalPaid:3600, monthlySub:200},
-            {id:15, name:'محمد خالد محمد الرشيدان', phone:'966501234581', joinDate:'2024-09-01', totalPaid:3600, monthlySub:200},
-            {id:16, name:'نايف أيمن الرشيدان', phone:'966501234582', joinDate:'2024-09-01', totalPaid:3600, monthlySub:200}
-        ];
+        else members = JSON.parse(JSON.stringify(ORIGINAL_MEMBERS));
         
         if(savedLoans) loans = JSON.parse(savedLoans);
-        else loans = [
-            {id:1, memberId:3, memberName:'حمود عبد المصلح', amount:3000, monthlyPayment:200, remaining:2800, loanDate:'2024-03-01', nextDueDate:'2026-04-01'},
-            {id:2, memberId:5, memberName:'ماجد خليل', amount:12400, monthlyPayment:400, remaining:12000, loanDate:'2025-09-01', nextDueDate:'2026-04-01'},
-            {id:3, memberId:7, memberName:'أحمد خليل', amount:5800, monthlyPayment:200, remaining:5600, loanDate:'2024-07-01', nextDueDate:'2026-04-01'},
-            {id:4, memberId:9, memberName:'خالد محمد', amount:13900, monthlyPayment:400, remaining:13500, loanDate:'2025-11-01', nextDueDate:'2026-04-01'},
-            {id:5, memberId:11, memberName:'عبد الله حمدان', amount:14200, monthlyPayment:250, remaining:13950, loanDate:'2025-11-01', nextDueDate:'2026-04-01'},
-            {id:6, memberId:12, memberName:'محمد عبد الله', amount:1800, monthlyPayment:200, remaining:1600, loanDate:'2024-01-01', nextDueDate:'2026-04-01'},
-            {id:7, memberId:13, memberName:'فيصل حمود', amount:5000, monthlyPayment:200, remaining:4800, loanDate:'2025-11-01', nextDueDate:'2026-04-01'},
-            {id:8, memberId:15, memberName:'محمد خالد', amount:3600, monthlyPayment:200, remaining:3400, loanDate:'2025-08-01', nextDueDate:'2026-04-01'},
-            {id:9, memberId:16, memberName:'نايف أيمن', amount:6000, monthlyPayment:200, remaining:5800, loanDate:'2026-01-01', nextDueDate:'2026-04-01'}
-        ];
+        else loans = JSON.parse(JSON.stringify(ORIGINAL_LOANS));
         
         if(savedEmergency) emergencyBalance = parseFloat(savedEmergency);
         if(savedEmergencyLog) emergencyLog = JSON.parse(savedEmergencyLog);
