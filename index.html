@@ -2,113 +2,560 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>صندوق عائلة الرشيدان</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Segoe UI', sans-serif; background: #f5f0e6; color: #1a2a4a; padding-bottom: 70px; }
-        .app { max-width: 500px; margin: 0 auto; background: #f5f0e6; min-height: 100vh; }
-        .card { background: white; border: 1px solid #1a2a4a; border-radius: 15px; padding: 15px; margin: 10px; }
-        .btn { padding: 12px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; width: 100%; margin: 5px 0; }
-        .btn-gold { background: #1a2a4a; color: white; }
-        .btn-dark { background: #e8e0d0; border: 1px solid #1a2a4a; }
-        input { width: 100%; padding: 10px; border-radius: 10px; border: 1px solid #1a2a4a; margin-bottom: 10px; }
-        .toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: #1a2a4a; color: white; padding: 10px 20px; border-radius: 30px; z-index: 999; }
-        .flex { display: flex; gap: 10px; }
-        .flex button { flex: 1; }
-        .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
-        .stat { background: #f5f0e6; padding: 15px; border-radius: 10px; text-align: center; }
-        .stat-value { font-size: 24px; font-weight: bold; color: #1a2a4a; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f0e6; min-height: 100vh; color: #1a2a4a; padding-bottom: 70px; }
+        .splash { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #f5f0e6 0%, #e8e0d0 100%); display: flex; justify-content: center; align-items: center; z-index: 1000; flex-direction: column; }
+        .splash h1 { font-size: 60px; }
+        .splash h2 { color: #1a2a4a; }
+        .splash p { opacity: 0.7; margin-top: 10px; }
+        .app { display: none; max-width: 500px; margin: 0 auto; background: #f5f0e6; min-height: 100vh; }
+        .hero { text-align: center; padding: 30px 20px; background: linear-gradient(135deg, #e8e0d0, #f5f0e6); margin: 20px; border-radius: 30px; border: 2px solid #1a2a4a; }
+        .hero-icon { font-size: 64px; margin-bottom: 10px; }
+        .hero-title { font-size: 28px; font-weight: bold; color: #1a2a4a; }
+        .hero-sub { font-size: 12px; opacity: 0.6; margin: 5px 0; }
+        .hero-tags { display: flex; justify-content: center; gap: 15px; margin-top: 15px; }
+        .hero-tags span { background: rgba(26,42,74,0.1); padding: 5px 12px; border-radius: 20px; font-size: 12px; color: #1a2a4a; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 0 15px; }
+        .icon-card { background: #ffffff; border: 2px solid #1a2a4a; border-radius: 20px; padding: 20px; text-align: center; cursor: pointer; transition: all 0.3s; }
+        .icon-card:hover { background: #e8e0d0; transform: translateY(-3px); }
+        .icon-card .icon { font-size: 35px; margin-bottom: 8px; }
+        .icon-card .title { color: #1a2a4a; font-size: 13px; font-weight: bold; }
+        .icon-card .info { font-size: 11px; opacity: 0.6; margin-top: 5px; }
+        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; max-width: 500px; margin: 0 auto; background: #ffffff; display: flex; justify-content: space-around; padding: 10px 15px; border-top: 2px solid #1a2a4a; z-index: 100; }
+        .nav-btn { background: none; border: none; color: #1a2a4a; opacity: 0.6; font-size: 11px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 3px; }
+        .nav-btn span:first-child { font-size: 20px; }
+        .nav-btn.active { opacity: 1; font-weight: bold; }
+        .page { display: none; padding: 20px; }
+        .page.active { display: block; }
+        .page-header { text-align: center; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #1a2a4a; }
+        .page-header h2 { color: #1a2a4a; font-size: 22px; }
+        .card { background: #ffffff; border: 1px solid #1a2a4a; border-radius: 15px; padding: 15px; margin-bottom: 12px; }
+        .member-row { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; }
+        .member-name { font-size: 16px; font-weight: bold; margin-bottom: 5px; color: #1a2a4a; }
+        .member-small { font-size: 11px; opacity: 0.6; color: #1a2a4a; }
+        .balance-green { color: #2e7d32; font-weight: bold; }
+        .balance-orange { color: #e65100; }
+        .progress-bar { background: #e0d5c0; border-radius: 10px; height: 6px; margin: 10px 0; }
+        .progress-fill { background: linear-gradient(90deg, #1a2a4a, #2a4a7a); height: 100%; border-radius: 10px; width: 0%; }
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+        .stat-card { background: #ffffff; border: 1px solid #1a2a4a; border-radius: 15px; padding: 15px; text-align: center; }
+        .stat-value { font-size: 24px; font-weight: bold; color: #1a2a4a; margin: 5px 0; }
+        .stat-label { font-size: 11px; opacity: 0.7; }
+        .btn { padding: 12px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; width: 100%; margin-bottom: 10px; }
+        .btn-gold { background: linear-gradient(135deg, #1a2a4a, #2a4a7a); color: #ffffff; }
+        .btn-dark { background: rgba(26,42,74,0.1); border: 1px solid #1a2a4a; color: #1a2a4a; }
+        .btn-red { background: rgba(220,53,69,0.1); border: 1px solid #dc3545; color: #dc3545; }
+        .btn-success { background: #2e7d32; color: white; }
+        .btn-small { padding: 6px 12px; font-size: 12px; width: auto; display: inline-block; margin: 0 5px; }
+        input, select { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #1a2a4a; background: #ffffff; color: #1a2a4a; margin-bottom: 10px; }
+        textarea { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #1a2a4a; background: #ffffff; color: #1a2a4a; font-family: monospace; font-size: 11px; resize: vertical; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 200; justify-content: center; align-items: center; }
+        .modal-content { background: #ffffff; border: 2px solid #1a2a4a; border-radius: 25px; padding: 25px; width: 90%; max-width: 400px; text-align: center; max-height: 80vh; overflow-y: auto; }
+        .whatsapp-link { background: #25D366; color: white; padding: 12px; border-radius: 12px; text-decoration: none; display: block; margin-bottom: 10px; }
+        .toast { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); background: #1a2a4a; color: #ffffff; padding: 10px 20px; border-radius: 30px; font-size: 14px; font-weight: bold; z-index: 300; }
+        .flex-btns { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+        .emergency-card { background: #ffffff; border: 2px solid #1a2a4a; }
+        .radio-group { display: flex; gap: 15px; justify-content: center; margin: 10px 0; }
+        .radio-group label { display: flex; align-items: center; gap: 5px; cursor: pointer; color: #1a2a4a; }
+        .support-log { background: #f5f0e6; border-radius: 10px; padding: 10px; margin-bottom: 8px; font-size: 12px; border-right: 3px solid #1a2a4a; }
+        .support-log span { color: #1a2a4a; font-weight: bold; }
+        .code-input { text-align: center; font-size: 24px; letter-spacing: 8px; direction: ltr; }
+        .home-footer { text-align: center; padding: 20px; margin-top: 20px; border-top: 1px solid rgba(26,42,74,0.1); }
+        .home-footer .developer { font-size: 12px; opacity: 0.7; }
+        .home-footer .version { font-size: 10px; opacity: 0.5; margin-top: 4px; }
+        .history-item { background: #f5f0e6; padding: 10px; border-radius: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; }
+        .form-group { margin-bottom: 15px; text-align: right; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body>
-<div class="app">
-    <div style="text-align:center; padding:20px; background:#e8e0d0; margin:10px; border-radius:30px;">
-        <h1 style="color:#1a2a4a;">🏦 صندوق الرشيدان</h1>
+
+<div class="splash" id="splash">
+    <div style="text-align:center">
+        <h1>🏦</h1>
+        <h2>صندوق الرشيدان</h2>
         <p>ALRUSHAYDAN FAMILY FUND</p>
-    </div>
-
-    <div class="card">
-        <h3>☁️ المزامنة السحابية</h3>
-        <input type="text" id="apiUrl" placeholder="رابط Google Apps Script">
-        <div class="flex">
-            <button class="btn btn-gold" onclick="saveUrl()">💾 حفظ</button>
-            <button class="btn btn-gold" onclick="syncToCloud()">📤 مزامنة للسحابة</button>
-            <button class="btn btn-dark" onclick="syncFromCloud()">📥 تحميل من السحابة</button>
-        </div>
-        <div id="status" style="margin-top:10px; font-size:12px; text-align:center;"></div>
-    </div>
-
-    <div class="card">
-        <h3>📊 الإحصائيات</h3>
-        <div class="stats" id="stats">
-            <div class="stat"><div>بند الطوارئ</div><div class="stat-value" id="emergencyBalance">0</div></div>
-            <div class="stat"><div>إجمالي المُقرض</div><div class="stat-value" id="totalLent">0</div></div>
-        </div>
     </div>
 </div>
 
+<div class="app" id="app">
+
+    <!-- الصفحة الرئيسية -->
+    <div id="homePage" class="page active">
+        <div class="hero">
+            <div class="hero-icon">🏦</div>
+            <div class="hero-title">صندوق الرشيدان</div>
+            <div class="hero-sub">ALRUSHAYDAN FAMILY FUND</div>
+            <div class="hero-tags">
+                <span>🤝 التعاون</span>
+                <span>🎯 المساعدة</span>
+                <span>🌱 النماء</span>
+            </div>
+        </div>
+
+        <div class="card emergency-card" style="margin: 0 15px 15px 15px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <div style="font-size: 14px; opacity:0.8;">🆘 بند الطوارئ</div>
+                    <div style="font-size: 24px; font-weight: bold; color: #1a2a4a;" id="emergencyBalance">0</div>
+                    <div style="font-size: 10px; opacity:0.6;">ريال</div>
+                </div>
+                <div style="text-align: left;">
+                    <div style="font-size: 11px;">📈 يزيد 15% شهرياً</div>
+                </div>
+            </div>
+            <div class="flex-btns" style="margin-top: 10px;">
+                <button class="btn-small btn-gold" onclick="showEmergencySupport()">🎁 دعم</button>
+                <button class="btn-small btn-dark" onclick="showEmergencyPay()">💳 إضافة</button>
+                <button class="btn-small btn-dark" onclick="showEmergencyLog()">📋 السجل</button>
+            </div>
+        </div>
+
+        <div class="grid">
+            <div class="icon-card" onclick="showPage('membersPage')"><div class="icon">👥</div><div class="title">الأعضاء</div><div class="info" id="homeMemberCount">0 عضو</div></div>
+            <div class="icon-card" onclick="showPage('loansPage')"><div class="icon">🏦</div><div class="title">القروض</div><div class="info" id="homeLoanCount">0 قرض</div></div>
+            <div class="icon-card" onclick="checkSubscriptionsAccess()"><div class="icon">📅</div><div class="title">الاشتراكات</div><div class="info">محمية</div></div>
+            <div class="icon-card" onclick="showPage('statsPage')"><div class="icon">📊</div><div class="title">الإحصائيات</div><div class="info">الميزانية</div></div>
+            <div class="icon-card" onclick="checkAdminAccess()"><div class="icon">⚙️</div><div class="title">الإدارة</div><div class="info">محمية</div></div>
+            <div class="icon-card" onclick="exportToPDF()"><div class="icon">📄</div><div class="title">تقرير PDF</div><div class="info">تصدير</div></div>
+            <div class="icon-card" onclick="exportToExcel()"><div class="icon">📊</div><div class="title">تقرير Excel</div><div class="info">تصدير</div></div>
+        </div>
+        
+        <div class="home-footer"><div class="developer">Ahmed K.Alrushaydan</div><div class="version">version 0.3.0</div></div>
+    </div>
+
+    <!-- صفحة الأعضاء -->
+    <div id="membersPage" class="page">
+        <div class="page-header"><h2>👥 الأعضاء</h2></div>
+        <input type="text" id="searchMember" placeholder="🔍 بحث باسم العضو...">
+        <div id="membersList"></div>
+    </div>
+
+    <!-- صفحة القروض -->
+    <div id="loansPage" class="page">
+        <div class="page-header"><h2>🏦 القروض النشطة</h2></div>
+        <div id="loansList"></div>
+    </div>
+
+    <!-- صفحة الاشتراكات -->
+    <div id="subscriptionsPage" class="page">
+        <div class="page-header"><h2>📅 الاشتراكات</h2></div>
+        <div class="card">
+            <h3>💰 تسجيل اشتراك للعضو</h3>
+            <select id="subMemberSelect"></select>
+            <input type="number" id="subAmount" placeholder="مبلغ الاشتراك (200)">
+            <input type="date" id="subDate">
+            <button class="btn btn-gold" onclick="recordMemberSubscription()">تسجيل اشتراك</button>
+        </div>
+        <div id="subscriptionsHistoryList"></div>
+        <div class="card">
+            <h3>🏦 سداد أقساط القروض</h3>
+            <select id="loanPaymentMember"></select>
+            <input type="date" id="loanPaymentDate">
+            <button class="btn btn-gold" onclick="makeLoanPayment()">سداد القسط</button>
+            <div id="loanPaymentsHistory"></div>
+        </div>
+    </div>
+
+    <!-- صفحة الإحصائيات -->
+    <div id="statsPage" class="page">
+        <div class="page-header"><h2>📊 الإحصائيات</h2></div>
+        <div class="stats-grid">
+            <div class="stat-card"><div class="stat-label">الرصيد الإجمالي الحالي</div><div class="stat-value" id="totalBalance">0</div></div>
+            <div class="stat-card"><div class="stat-label">إجمالي المبالغ المقترضة</div><div class="stat-value" id="totalLoansAmount">0</div></div>
+            <div class="stat-card"><div class="stat-label">المتاح للإقراض</div><div class="stat-value" id="availableAmount">0</div></div>
+            <div class="stat-card"><div class="stat-label">بند الطوارئ</div><div class="stat-value" id="statsEmergency">0</div></div>
+            <div class="stat-card"><div class="stat-label">إجمالي المُقرض</div><div class="stat-value" id="totalLent">0</div></div>
+            <div class="stat-card"><div class="stat-label">عدد الأعضاء</div><div class="stat-value" id="memberCount">0</div></div>
+        </div>
+        <button class="btn btn-dark" onclick="refreshAll()">🔄 تحديث</button>
+        <button class="btn btn-dark edit-stats-btn" onclick="checkStatsEditAccess()" style="margin-top:5px;">✏️ تعديل الإحصائيات</button>
+    </div>
+
+    <!-- صفحة الإدارة -->
+    <div id="adminPage" class="page">
+        <div class="page-header"><h2>⚙️ لوحة الإدارة</h2></div>
+
+        <!-- المزامنة السحابية -->
+        <div class="card">
+            <h3>☁️ المزامنة السحابية</h3>
+            <input type="text" id="apiUrl" placeholder="رابط Google Apps Script">
+            <div class="flex-btns">
+                <button class="btn btn-gold" onclick="saveApiUrl()">💾 حفظ الرابط</button>
+                <button class="btn btn-success" onclick="syncToCloud()">📤 مزامنة للسحابة</button>
+                <button class="btn btn-warning" onclick="syncFromCloud()">📥 تحميل من السحابة</button>
+            </div>
+            <div id="cloudStatus" style="margin-top:10px; font-size:12px; text-align:center;"></div>
+        </div>
+
+        <div class="card"><h3>➕ إضافة عضو</h3><input type="text" id="newMemberName" placeholder="الاسم الكامل"><input type="tel" id="newMemberPhone" placeholder="رقم الجوال"><button class="btn btn-gold" onclick="addMember()">إضافة عضو</button></div>
+        <div class="card"><h3>🏦 إضافة قرض</h3><select id="loanMember"></select><input type="number" id="loanAmount" placeholder="مبلغ القرض"><input type="number" id="loanInstallment" placeholder="القسط الشهري"><input type="date" id="loanDate"><button class="btn btn-gold" onclick="addLoan()">إضافة قرض</button></div>
+        <div class="card"><h3>📞 أرقام المسؤولين</h3><input type="tel" id="phone1" placeholder="رقم المسؤول 1"><input type="tel" id="phone2" placeholder="رقم المسؤول 2"><input type="tel" id="phone3" placeholder="رقم المسؤول 3"><button class="btn btn-gold" onclick="savePhones()">حفظ</button></div>
+        <div class="card"><h3>🗑️ إعادة تعيين</h3><button class="btn btn-red" onclick="resetAll()">مسح جميع البيانات</button></div>
+    </div>
+
+    <div class="bottom-nav">
+        <button class="nav-btn" onclick="showPage('homePage')"><span>🏠</span><span>الرئيسية</span></button>
+        <button class="nav-btn" onclick="showPage('membersPage')"><span>👥</span><span>الأعضاء</span></button>
+        <button class="nav-btn" onclick="showPage('loansPage')"><span>🏦</span><span>القروض</span></button>
+        <button class="nav-btn" onclick="checkSubscriptionsAccess()"><span>📅</span><span>الاشتراكات</span></button>
+        <button class="nav-btn" onclick="showPage('statsPage')"><span>📊</span><span>الإحصائيات</span></button>
+        <button class="nav-btn" onclick="checkAdminAccess()"><span>⚙️</span><span>الإدارة</span></button>
+    </div>
+</div>
+
+<!-- النوافذ المنبثقة -->
+<div id="codeModal" class="modal"><div class="modal-content"><h3>🔐 رمز الدخول</h3><input type="password" id="secretCode" class="code-input" placeholder="•••••" maxlength="5"><button class="btn btn-gold" onclick="verifyCode()">تأكيد</button><button class="btn btn-dark" onclick="closeModal()">إلغاء</button></div></div>
+<div id="editStatsModal" class="modal"><div class="modal-content"><h3>✏️ تعديل الإحصائيات</h3><input type="number" id="editEmergencyBalance" placeholder="بند الطوارئ"><input type="number" id="editTotalLent" placeholder="إجمالي المُقرض"><button class="btn btn-gold" onclick="saveStatsEdit()">حفظ</button><button class="btn btn-dark" onclick="closeModal()">إلغاء</button></div></div>
+<div id="editMemberModal" class="modal"><div class="modal-content"><h3>✏️ تعديل العضو</h3><input type="hidden" id="editMemberId"><input type="text" id="editMemberName" placeholder="الاسم"><input type="tel" id="editMemberPhone" placeholder="الجوال"><input type="number" id="editMemberMonthlySub" placeholder="الاشتراك الشهري"><input type="number" id="editMemberTotalPaid" placeholder="إجمالي المدفوع"><button class="btn btn-gold" onclick="saveMemberEdit()">حفظ</button><button class="btn btn-dark" onclick="closeModal()">إلغاء</button></div></div>
+<div id="emergencySupportModal" class="modal"><div class="modal-content"><h3>🎁 دعم من الطوارئ</h3><select id="supportMember"></select><input type="number" id="supportAmount" placeholder="المبلغ"><div class="radio-group"><label><input type="radio" name="supportType" value="refundable" checked> 🔄 دعم مسترد</label><label><input type="radio" name="supportType" value="nonRefundable"> ❌ دعم غير مسترد</label></div><input type="text" id="supportReason" placeholder="السبب"><button class="btn btn-gold" onclick="confirmSupport()">تأكيد</button><button class="btn btn-dark" onclick="closeModal()">إلغاء</button></div></div>
+<div id="emergencyPayModal" class="modal"><div class="modal-content"><h3>💳 إضافة للطوارئ</h3><input type="number" id="emergencyAddAmount" placeholder="المبلغ"><button class="btn btn-gold" onclick="confirmEmergencyAdd()">تأكيد</button><button class="btn btn-dark" onclick="closeModal()">إلغاء</button></div></div>
+<div id="emergencyLogModal" class="modal"><div class="modal-content"><h3>📋 سجل دعم الطوارئ</h3><div id="emergencyLogList"></div><button class="btn btn-dark" onclick="closeModal()">إغلاق</button></div></div>
+<div id="loanModal" class="modal"><div class="modal-content"><h3>📱 طلب قرض</h3><div id="whatsappLinks"></div><button class="btn btn-dark" onclick="closeModal()">إلغاء</button></div></div>
+
 <script>
+    // ========== الرمز السري ==========
+    const SECRET_CODE = '13579';
+    let pendingAction = null;
+    let pendingMemberId = null;
+
+    // ========== إعدادات السحابة ==========
     let apiUrl = localStorage.getItem('apiUrl') || '';
 
-    function saveUrl() {
-        apiUrl = document.getElementById('apiUrl').value;
-        localStorage.setItem('apiUrl', apiUrl);
-        showMessage('✅ تم حفظ الرابط');
-    }
+    // ========== البيانات الأساسية ==========
+    let members = [];
+    let loans = [];
+    let emergencyBalance = 9988;
+    let emergencyLog = [];
+    let adminPhones = { phone1: '966501234567', phone2: '966501234568', phone3: '966501234569' };
+    let totalLent = 139900;
+    let subscriptionsHistory = [];
+    let loanPaymentsHistory = [];
 
+    // ========== دوال السحابة ==========
     async function syncToCloud() {
         if (!apiUrl) { showMessage('❌ الرجاء إدخال رابط التطبيق'); return; }
         showMessage('⏳ جاري المزامنة...');
+        document.getElementById('cloudStatus').innerHTML = '⏳ جاري المزامنة...';
         
         let data = {
-            emergencyBalance: 9988,
-            totalLent: 139900,
-            members: [],
-            loans: []
+            members: members,
+            loans: loans,
+            emergencyBalance: emergencyBalance,
+            emergencyLog: emergencyLog,
+            totalLent: totalLent,
+            adminPhones: adminPhones,
+            subscriptionsHistory: subscriptionsHistory,
+            loanPaymentsHistory: loanPaymentsHistory
         };
         
         try {
-            let response = await fetch(apiUrl, {
+            await fetch(apiUrl, {
                 method: 'POST',
                 mode: 'no-cors',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
             });
-            showMessage('✅ تمت المزامنة');
-            document.getElementById('status').innerHTML = '✅ تم المزامنة';
+            document.getElementById('cloudStatus').innerHTML = '✅ تمت المزامنة';
+            showMessage('✅ تمت المزامنة إلى السحابة');
         } catch(err) {
             showMessage('❌ خطأ: ' + err.message);
+            document.getElementById('cloudStatus').innerHTML = '❌ فشل المزامنة';
         }
     }
 
     async function syncFromCloud() {
         if (!apiUrl) { showMessage('❌ الرجاء إدخال رابط التطبيق'); return; }
         showMessage('⏳ جاري التحميل...');
+        document.getElementById('cloudStatus').innerHTML = '⏳ جاري التحميل...';
         
         try {
             let response = await fetch(apiUrl);
             let data = await response.json();
             
-            document.getElementById('emergencyBalance').innerHTML = (data.emergencyBalance || 9988).toLocaleString();
-            document.getElementById('totalLent').innerHTML = (data.totalLent || 139900).toLocaleString();
+            if (data.members) members = data.members;
+            if (data.loans) loans = data.loans;
+            if (data.emergencyBalance !== undefined) emergencyBalance = data.emergencyBalance;
+            if (data.emergencyLog) emergencyLog = data.emergencyLog;
+            if (data.totalLent !== undefined) totalLent = data.totalLent;
+            if (data.adminPhones) adminPhones = data.adminPhones;
+            if (data.subscriptionsHistory) subscriptionsHistory = data.subscriptionsHistory;
+            if (data.loanPaymentsHistory) loanPaymentsHistory = data.loanPaymentsHistory;
             
-            showMessage('✅ تم التحميل من السحابة');
-            document.getElementById('status').innerHTML = '✅ تم التحميل';
+            saveAllData();
+            refreshAll();
+            document.getElementById('cloudStatus').innerHTML = '✅ تم التحميل من السحابة';
+            showMessage('✅ تم التحميل من السحابة بنجاح');
         } catch(err) {
             showMessage('❌ خطأ: ' + err.message);
+            document.getElementById('cloudStatus').innerHTML = '❌ فشل التحميل';
         }
     }
 
+    function saveApiUrl() {
+        apiUrl = document.getElementById('apiUrl').value;
+        localStorage.setItem('apiUrl', apiUrl);
+        showMessage('✅ تم حفظ رابط التطبيق');
+    }
+
+    // ========== دوال النسخ الاحتياطي ==========
+    function saveAllData() {
+        localStorage.setItem('family_members', JSON.stringify(members));
+        localStorage.setItem('family_loans', JSON.stringify(loans));
+        localStorage.setItem('family_emergency', emergencyBalance);
+        localStorage.setItem('family_emergency_log', JSON.stringify(emergencyLog));
+        localStorage.setItem('family_phones', JSON.stringify(adminPhones));
+        localStorage.setItem('family_total_lent', totalLent);
+        localStorage.setItem('family_subscriptions_history', JSON.stringify(subscriptionsHistory));
+        localStorage.setItem('family_loan_payments_history', JSON.stringify(loanPaymentsHistory));
+    }
+    
     function showMessage(msg) {
         let toast = document.createElement('div');
         toast.className = 'toast';
-        toast.innerText = msg;
+        toast.innerHTML = msg;
         document.body.appendChild(toast);
         setTimeout(() => toast.remove(), 2000);
     }
-
-    document.getElementById('apiUrl').value = apiUrl;
+    
+    function refreshAll() {
+        displayMembers();
+        displayLoans();
+        updateStatsDisplay();
+        updateHomeCounts();
+        updateEmergencyDisplay();
+        if (document.getElementById('subscriptionsPage') && document.getElementById('subscriptionsPage').classList.contains('active')) {
+            displaySubscriptionsHistory();
+            displayLoanPaymentsHistory();
+        }
+        showMessage('✅ تم تحديث البيانات');
+    }
+    
+    function showPage(pageId) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.getElementById(pageId).classList.add('active');
+        if (pageId === 'membersPage') displayMembers();
+        if (pageId === 'loansPage') displayLoans();
+        if (pageId === 'subscriptionsPage') {
+            fillSubSelects();
+            fillLoanPaymentSelect();
+            displaySubscriptionsHistory();
+            displayLoanPaymentsHistory();
+        }
+        if (pageId === 'statsPage') updateStatsDisplay();
+        if (pageId === 'adminPage') {
+            updateAdminSelects();
+            document.getElementById('apiUrl').value = apiUrl;
+        }
+        updateHomeCounts();
+        updateEmergencyDisplay();
+    }
+    
+    function updateHomeCounts() {
+        document.getElementById('homeMemberCount').innerHTML = members.length + ' عضو';
+        let activeLoans = loans.filter(l => l.remaining > 0).length;
+        document.getElementById('homeLoanCount').innerHTML = activeLoans + ' قرض';
+    }
+    
+    function updateEmergencyDisplay() {
+        document.getElementById('emergencyBalance').innerHTML = emergencyBalance.toLocaleString();
+        document.getElementById('statsEmergency').innerHTML = emergencyBalance.toLocaleString();
+    }
+    
+    function updateStatsDisplay() {
+        let totalPaid = members.reduce((s,m) => s + m.totalPaid, 0);
+        let totalRemain = loans.reduce((s,l) => s + l.remaining, 0);
+        let available = totalPaid - totalRemain - emergencyBalance;
+        document.getElementById('totalBalance').innerHTML = totalPaid.toLocaleString();
+        document.getElementById('totalLoansAmount').innerHTML = totalRemain.toLocaleString();
+        document.getElementById('availableAmount').innerHTML = available.toLocaleString();
+        document.getElementById('totalLent').innerHTML = totalLent.toLocaleString();
+        document.getElementById('memberCount').innerHTML = members.length;
+    }
+    
+    function displayMembers() {
+        let search = document.getElementById('searchMember')?.value.toLowerCase() || '';
+        let filtered = members.filter(m => m.name.toLowerCase().includes(search));
+        let html = '';
+        filtered.forEach(m => {
+            let debt = loans.filter(l => l.memberId === m.id).reduce((s,l) => s + l.remaining, 0);
+            html += `<div class="card"><div class="member-row"><div><div class="member-name">${m.name}</div><div class="member-small">📅 ${m.joinDate} | 📞 ${m.phone}</div></div><div>💰 ${m.totalPaid.toLocaleString()} | 🏦 ${debt.toLocaleString()}</div></div><div class="flex-btns"><button class="btn-small btn-gold" onclick="openEditMember(${m.id})">✏️ تعديل</button><button class="btn-small btn-dark" onclick="openLoanRequest('${m.name}','${m.phone}')">📱 طلب قرض</button></div></div>`;
+        });
+        document.getElementById('membersList').innerHTML = html || '<p style="text-align:center">لا توجد نتائج</p>';
+    }
+    
+    function displayLoans() {
+        let active = loans.filter(l => l.remaining > 0);
+        if (active.length === 0) { document.getElementById('loansList').innerHTML = '<p style="text-align:center">لا توجد قروض نشطة</p>'; return; }
+        let html = '';
+        active.forEach(l => {
+            let progress = ((l.amount - l.remaining) / l.amount) * 100;
+            html += `<div class="card"><div class="member-name" style="color:#1a2a4a">${l.memberName}</div><div class="loan-date" style="font-size:10px; color:#1a2a4a;">📅 تاريخ القرض: ${l.loanDate}</div><div class="progress-bar"><div class="progress-fill" style="width: ${progress}%"></div></div><div style="display:flex; justify-content:space-between"><span>💰 ${l.amount.toLocaleString()}</span><span>📅 ${l.monthlyPayment}</span></div><div style="display:flex; justify-content:space-between"><span style="color:#e65100">⚡ ${l.remaining.toLocaleString()}</span><span>📆 ${l.nextDueDate}</span></div><button class="btn-small btn-gold" style="margin-top:10px" onclick="openRepaymentForLoan(${l.memberId})">💰 سداد قسط</button></div>`;
+        });
+        document.getElementById('loansList').innerHTML = html;
+    }
+    
+    function openRepaymentForLoan(memberId) {
+        document.getElementById('repaymentMember').value = memberId;
+        document.getElementById('repaymentAmount').value = '';
+        document.getElementById('codeModal').style.display = 'flex';
+        document.getElementById('secretCode').focus();
+        pendingAction = 'repayment';
+    }
+    
+    function updateAdminSelects() {
+        let options = '<option value="">اختر العضو</option>';
+        members.forEach(m => { options += `<option value="${m.id}">${m.name}</option>`; });
+        document.getElementById('loanMember').innerHTML = options;
+        document.getElementById('subMemberSelect').innerHTML = options;
+        document.getElementById('loanPaymentMember').innerHTML = options;
+        document.getElementById('repaymentMember').innerHTML = options;
+        document.getElementById('supportMember').innerHTML = options;
+        document.getElementById('phone1').value = adminPhones.phone1;
+        document.getElementById('phone2').value = adminPhones.phone2;
+        document.getElementById('phone3').value = adminPhones.phone3;
+    }
+    
+    function fillSubSelects() { updateAdminSelects(); }
+    function fillLoanPaymentSelect() { updateAdminSelects(); }
+    
+    function displaySubscriptionsHistory() {
+        let container = document.getElementById('subscriptionsHistoryList');
+        if (subscriptionsHistory.length === 0) { container.innerHTML = '<p style="text-align:center">لا توجد سجلات</p>'; return; }
+        container.innerHTML = subscriptionsHistory.map((log, i) => `<div class="history-item"><div>📅 ${log.date} | ${log.memberName}<br>💰 ${log.amount.toLocaleString()} ريال</div><button onclick="undoSubscription(${i})" style="background:#dc3545;color:white;border:none;padding:5px 10px;border-radius:8px">↩️ تراجع</button></div>`).join('');
+    }
+    
+    function displayLoanPaymentsHistory() {
+        let container = document.getElementById('loanPaymentsHistory');
+        if (loanPaymentsHistory.length === 0) { container.innerHTML = '<p style="text-align:center">لا توجد سجلات</p>'; return; }
+        container.innerHTML = loanPaymentsHistory.map((log, i) => `<div class="history-item"><div>📅 ${log.date} | ${log.memberName}<br>💰 ${log.amount.toLocaleString()} ريال | متبقي: ${log.remainingAfter.toLocaleString()}</div><button onclick="undoLoanPayment(${i})" style="background:#dc3545;color:white;border:none;padding:5px 10px;border-radius:8px">↩️ تراجع</button></div>`).join('');
+    }
+    
+    function undoSubscription(i) { let log = subscriptionsHistory[i]; let m = members.find(m=>m.id==log.memberId); if(m) m.totalPaid -= log.amount; subscriptionsHistory.splice(i,1); saveAllData(); refreshAll(); showMessage('تم التراجع'); }
+    function undoLoanPayment(i) { let log = loanPaymentsHistory[i]; let loan = loans.find(l=>l.id==log.loanId); if(loan) loan.remaining += log.amount; loanPaymentsHistory.splice(i,1); saveAllData(); refreshAll(); showMessage('تم التراجع'); }
+    
+    function recordMemberSubscription() { let memberId = document.getElementById('subMemberSelect').value; let amount = parseFloat(document.getElementById('subAmount').value) || 200; let date = document.getElementById('subDate').value || new Date().toISOString().split('T')[0]; if(!memberId) return; let m = members.find(m=>m.id==memberId); m.totalPaid += amount; subscriptionsHistory.push({date, memberId, memberName:m.name, amount}); saveAllData(); refreshAll(); showMessage(`✅ تم تسجيل اشتراك ${amount} ريال للعضو ${m.name}`); document.getElementById('subAmount').value=''; }
+    function makeLoanPayment() { let memberId = document.getElementById('loanPaymentMember').value; let date = document.getElementById('loanPaymentDate').value || new Date().toISOString().split('T')[0]; if(!memberId) return; let loan = loans.find(l=>l.memberId==memberId && l.remaining>0); if(!loan) { showMessage('❌ لا يوجد قرض نشط'); return; } let amount = loan.monthlyPayment; loan.remaining = Math.max(0, loan.remaining - amount); loanPaymentsHistory.push({date, memberId, memberName:loan.memberName, amount, remainingAfter:loan.remaining, loanId:loan.id}); saveAllData(); refreshAll(); showMessage(`✅ تم سداد قسط ${amount.toLocaleString()} ريال للعضو ${loan.memberName}`); document.getElementById('loanPaymentDate').value=''; }
+    
+    function addMember() { let name = document.getElementById('newMemberName').value; let phone = document.getElementById('newMemberPhone').value; if(!name||!phone) { showMessage('❌ أدخل الاسم والجوال'); return; } let newId = Math.max(...members.map(m=>m.id),0)+1; members.push({id:newId, name, phone, joinDate:new Date().toISOString().split('T')[0], totalPaid:0, monthlySub:200}); saveAllData(); refreshAll(); showMessage(`✅ تم إضافة ${name}`); document.getElementById('newMemberName').value=''; document.getElementById('newMemberPhone').value=''; }
+    function addLoan() { let memberId = document.getElementById('loanMember').value; let amount = parseFloat(document.getElementById('loanAmount').value); let installment = parseFloat(document.getElementById('loanInstallment').value); let loanDate = document.getElementById('loanDate').value || new Date().toISOString().split('T')[0]; if(!memberId||!amount||!installment) { showMessage('❌ املأ جميع الحقول'); return; } let m = members.find(m=>m.id==memberId); let newId = Math.max(...loans.map(l=>l.id),0)+1; let nextDate = new Date(); nextDate.setMonth(nextDate.getMonth()+1); loans.push({id:newId, memberId:parseInt(memberId), memberName:m.name, amount, monthlyPayment:installment, remaining:amount, loanDate, nextDueDate:nextDate.toISOString().split('T')[0]}); totalLent += amount; saveAllData(); refreshAll(); showMessage(`✅ تم إضافة قرض بقيمة ${amount.toLocaleString()} ريال`); document.getElementById('loanAmount').value=''; document.getElementById('loanInstallment').value=''; document.getElementById('loanDate').value=''; }
+    function savePhones() { adminPhones = { phone1: document.getElementById('phone1').value, phone2: document.getElementById('phone2').value, phone3: document.getElementById('phone3').value }; saveAllData(); showMessage('✅ تم حفظ الأرقام'); }
+    function openLoanRequest(name, phone) { let msg = `السلام عليكم، أنا ${name} أود طلب قرض. رقمي: ${phone}`; document.getElementById('whatsappLinks').innerHTML = `<a href="https://wa.me/${adminPhones.phone1}?text=${encodeURIComponent(msg)}" class="whatsapp-link">📱 المسؤول الأول - ${adminPhones.phone1}</a><a href="https://wa.me/${adminPhones.phone2}?text=${encodeURIComponent(msg)}" class="whatsapp-link">📱 المسؤول الثاني - ${adminPhones.phone2}</a><a href="https://wa.me/${adminPhones.phone3}?text=${encodeURIComponent(msg)}" class="whatsapp-link">📱 المسؤول الثالث - ${adminPhones.phone3}</a>`; document.getElementById('loanModal').style.display='flex'; }
+    function showEmergencySupport() { updateAdminSelects(); document.getElementById('emergencySupportModal').style.display='flex'; }
+    function confirmSupport() { let memberId = document.getElementById('supportMember').value; let amount = parseFloat(document.getElementById('supportAmount').value); let reason = document.getElementById('supportReason').value; let type = document.querySelector('input[name="supportType"]:checked').value; if(!memberId||!amount) { showMessage('❌ املأ الحقول'); return; } let m = members.find(m=>m.id==memberId); if(amount>emergencyBalance) { showMessage('❌ المبلغ أكبر من رصيد الطوارئ'); return; } emergencyBalance -= amount; emergencyLog.unshift({date:new Date().toLocaleDateString('ar-SA'), memberName:m.name, amount, type:type==='refundable'?'🔄 دعم مسترد':'❌ دعم غير مسترد', reason:reason||'بدون سبب'}); saveAllData(); refreshAll(); closeModal(); showMessage(`✅ تم صرف ${amount.toLocaleString()} ريال للعضو ${m.name}`); }
+    function showEmergencyPay() { document.getElementById('emergencyPayModal').style.display='flex'; }
+    function confirmEmergencyAdd() { let amount = parseFloat(document.getElementById('emergencyAddAmount').value); if(!amount) { showMessage('❌ أدخل المبلغ'); return; } emergencyBalance += amount; saveAllData(); refreshAll(); closeModal(); showMessage(`✅ تم إضافة ${amount.toLocaleString()} ريال للطوارئ`); }
+    function showEmergencyLog() { document.getElementById('emergencyLogList').innerHTML = emergencyLog.length===0 ? '<p style="text-align:center">لا توجد سجلات</p>' : emergencyLog.map(l=>`<div class="support-log"><div><span>📅 ${l.date}</span> | <span>${l.type}</span></div><div>👤 ${l.memberName}</div><div>💰 ${l.amount.toLocaleString()} ريال</div><div>📝 ${l.reason}</div></div>`).join(''); document.getElementById('emergencyLogModal').style.display='flex'; }
+    function openEditMember(id) { pendingMemberId = id; document.getElementById('codeModal').style.display='flex'; document.getElementById('secretCode').focus(); pendingAction='editMember'; }
+    function showEditMemberModal() { let m = members.find(m=>m.id==pendingMemberId); if(m) { document.getElementById('editMemberId').value=m.id; document.getElementById('editMemberName').value=m.name; document.getElementById('editMemberPhone').value=m.phone; document.getElementById('editMemberMonthlySub').value=m.monthlySub; document.getElementById('editMemberTotalPaid').value=m.totalPaid; document.getElementById('editMemberModal').style.display='flex'; } pendingMemberId=null; }
+    function saveMemberEdit() { let id = parseInt(document.getElementById('editMemberId').value); let name = document.getElementById('editMemberName').value; let phone = document.getElementById('editMemberPhone').value; let sub = parseFloat(document.getElementById('editMemberMonthlySub').value); let paid = parseFloat(document.getElementById('editMemberTotalPaid').value); let m = members.find(m=>m.id==id); if(m) { m.name=name; m.phone=phone; m.monthlySub=sub; m.totalPaid=paid; saveAllData(); refreshAll(); showMessage('✅ تم تعديل العضو'); closeModal(); } }
+    function checkStatsEditAccess() { document.getElementById('codeModal').style.display='flex'; document.getElementById('secretCode').focus(); pendingAction='editStats'; }
+    function openEditStatsModal() { document.getElementById('editEmergencyBalance').value = emergencyBalance; document.getElementById('editTotalLent').value = totalLent; document.getElementById('editStatsModal').style.display='flex'; }
+    function saveStatsEdit() { let newEmergency = parseFloat(document.getElementById('editEmergencyBalance').value); let newTotalLent = parseFloat(document.getElementById('editTotalLent').value); if(!isNaN(newEmergency)) emergencyBalance = newEmergency; if(!isNaN(newTotalLent)) totalLent = newTotalLent; saveAllData(); refreshAll(); closeModal(); showMessage('✅ تم تعديل الإحصائيات'); }
+    function resetAll() { if(confirm('⚠️ هل أنت متأكد؟ هذا سيمسح جميع التعديلات')) { localStorage.clear(); location.reload(); } }
+    function closeModal() { document.querySelectorAll('.modal').forEach(m=>m.style.display='none'); pendingAction=null; }
+    function checkAdminAccess() { document.getElementById('codeModal').style.display='flex'; document.getElementById('secretCode').focus(); pendingAction='admin'; }
+    function checkSubscriptionsAccess() { document.getElementById('codeModal').style.display='flex'; document.getElementById('secretCode').focus(); pendingAction='subscriptions'; }
+    function verifyCode() { if(document.getElementById('secretCode').value===SECRET_CODE) { document.getElementById('codeModal').style.display='none'; if(pendingAction==='admin') showPage('adminPage'); else if(pendingAction==='subscriptions') showPage('subscriptionsPage'); else if(pendingAction==='editMember') showEditMemberModal(); else if(pendingAction==='editStats') openEditStatsModal(); else if(pendingAction==='repayment') document.getElementById('repaymentModal').style.display='flex'; showMessage('✅ مرحباً بك'); } else showMessage('❌ الرمز غير صحيح'); }
+    
+    function exportToPDF() { const { jsPDF } = window.jspdf; let doc = new jsPDF({ orientation: 'landscape' }); doc.text('صندوق عائلة الرشيدان - تقرير شامل', 14, 15); doc.text(`التاريخ: ${new Date().toLocaleDateString('ar-EG')}`, 14, 25); let totalPaid = members.reduce((s,m)=>s+m.totalPaid,0); let totalRemain = loans.reduce((s,l)=>s+l.remaining,0); let available = totalPaid - totalRemain - emergencyBalance; let summary = [['البيان', 'القيمة'], ['الرصيد الإجمالي الحالي', totalPaid.toLocaleString()], ['إجمالي القروض', totalRemain.toLocaleString()], ['المتاح للإقراض', available.toLocaleString()], ['بند الطوارئ', emergencyBalance.toLocaleString()], ['إجمالي المُقرض', totalLent.toLocaleString()], ['عدد الأعضاء', members.length.toString()]]; doc.autoTable({ head: [['الملخص المالي', '']], body: summary, startY: 35, styles: { fontSize: 8, halign: 'right' }, headStyles: { fillColor: [26, 42, 74] } }); let memberData = members.map(m => [m.name, m.phone, m.totalPaid, loans.filter(l=>l.memberId===m.id).reduce((s,l)=>s+l.remaining,0)]); doc.autoTable({ head: [['اسم العضو', 'الجوال', 'إجمالي المدفوع', 'المتبقي']], body: memberData, startY: doc.lastAutoTable.finalY + 10, styles: { fontSize: 7, halign: 'right' }, headStyles: { fillColor: [26, 42, 74] } }); doc.save(`تقرير_الرشيدان_${new Date().toLocaleDateString()}.pdf`); showMessage('✅ تم تصدير PDF'); }
+    function exportToExcel() { let ws = XLSX.utils.json_to_sheet(members.map(m => ({ 'اسم العضو': m.name, 'الجوال': m.phone, 'تاريخ الاشتراك': m.joinDate, 'إجمالي المدفوع': m.totalPaid, 'المتبقي من القروض': loans.filter(l=>l.memberId===m.id).reduce((s,l)=>s+l.remaining,0) }))); let wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'الأعضاء'); XLSX.writeFile(wb, `تقرير_الرشيدان_${new Date().toLocaleDateString()}.xlsx`); showMessage('✅ تم تصدير Excel'); }
+    
+    // نافذة تسديد القسط
+    let repaymentModalDiv = document.createElement('div');
+    repaymentModalDiv.id = 'repaymentModal';
+    repaymentModalDiv.className = 'modal';
+    repaymentModalDiv.innerHTML = `<div class="modal-content"><h3>💰 تسديد قسط</h3><select id="repaymentMember"></select><input type="number" id="repaymentAmount" placeholder="المبلغ المدفوع"><button class="btn btn-gold" onclick="confirmRepayment()">تأكيد السداد</button><button class="btn btn-dark" onclick="closeModal()">إلغاء</button></div>`;
+    document.body.appendChild(repaymentModalDiv);
+    
+    function confirmRepayment() {
+        let memberId = document.getElementById('repaymentMember').value;
+        let amount = parseFloat(document.getElementById('repaymentAmount').value);
+        if (!memberId) { showMessage('❌ اختر العضو'); return; }
+        if (!amount || amount <= 0) { showMessage('❌ أدخل المبلغ'); return; }
+        let loan = loans.find(l => l.memberId == memberId && l.remaining > 0);
+        if (!loan) { showMessage('❌ لا يوجد قرض نشط'); return; }
+        loan.remaining = Math.max(0, loan.remaining - amount);
+        saveAllData();
+        refreshAll();
+        document.getElementById('repaymentAmount').value = '';
+        closeModal();
+        showMessage(`✅ تم تسديد ${amount.toLocaleString()} ريال`);
+    }
+    
+    function loadData() {
+        let savedMembers = localStorage.getItem('family_members');
+        let savedLoans = localStorage.getItem('family_loans');
+        let savedEmergency = localStorage.getItem('family_emergency');
+        let savedEmergencyLog = localStorage.getItem('family_emergency_log');
+        let savedPhones = localStorage.getItem('family_phones');
+        let savedTotalLent = localStorage.getItem('family_total_lent');
+        
+        if(savedMembers) { members = JSON.parse(savedMembers); }
+        else {
+            members = [
+                {id:1, name:'محمد عبد المصلح الرشيدان', phone:'966501234567', joinDate:'2022-08-01', totalPaid:8400, monthlySub:200},
+                {id:2, name:'أحمد عبد المصلح الرشيدان', phone:'966501234568', joinDate:'2023-04-01', totalPaid:8400, monthlySub:200},
+                {id:3, name:'حمود عبد المصلح الرشيدان', phone:'966501234569', joinDate:'2022-08-01', totalPaid:8400, monthlySub:200},
+                {id:4, name:'عبد الله عبد المصلح الرشيدان', phone:'966501234570', joinDate:'2022-08-01', totalPaid:8400, monthlySub:200},
+                {id:5, name:'ماجد خليل الرشيدان', phone:'966501234571', joinDate:'2022-08-01', totalPaid:8400, monthlySub:200},
+                {id:6, name:'أمجد خليل الرشيدان', phone:'966501234572', joinDate:'2025-02-01', totalPaid:2600, monthlySub:200},
+                {id:7, name:'أحمد خليل الرشيدان', phone:'966501234573', joinDate:'2022-08-01', totalPaid:8400, monthlySub:200},
+                {id:8, name:'أيمن خليل الرشيدان', phone:'966501234574', joinDate:'2022-08-01', totalPaid:8400, monthlySub:200},
+                {id:9, name:'خالد محمد الرشيدان', phone:'966501234575', joinDate:'2022-08-01', totalPaid:8400, monthlySub:200},
+                {id:10, name:'سامي خالد الرشيدان', phone:'966501234576', joinDate:'2025-10-01', totalPaid:800, monthlySub:200},
+                {id:11, name:'عبد الله حمدان الرشيدان', phone:'966501234577', joinDate:'2022-08-01', totalPaid:8400, monthlySub:200},
+                {id:12, name:'محمد عبد الله الرشيدان', phone:'966501234578', joinDate:'2022-09-01', totalPaid:8400, monthlySub:200},
+                {id:13, name:'فيصل حمود الرشيدان', phone:'966501234579', joinDate:'2024-09-01', totalPaid:3600, monthlySub:200},
+                {id:14, name:'عمر عبد الله الرشيدان', phone:'966501234580', joinDate:'2024-09-01', totalPaid:3600, monthlySub:200},
+                {id:15, name:'محمد خالد محمد الرشيدان', phone:'966501234581', joinDate:'2024-09-01', totalPaid:3600, monthlySub:200},
+                {id:16, name:'نايف أيمن الرشيدان', phone:'966501234582', joinDate:'2024-09-01', totalPaid:3600, monthlySub:200}
+            ];
+        }
+        
+        if(savedLoans) { loans = JSON.parse(savedLoans); }
+        else {
+            loans = [
+                {id:1, memberId:3, memberName:'حمود عبد المصلح', amount:3000, monthlyPayment:200, remaining:2800, loanDate:'2024-03-01', nextDueDate:'2026-04-01'},
+                {id:2, memberId:5, memberName:'ماجد خليل', amount:12400, monthlyPayment:400, remaining:12000, loanDate:'2025-09-01', nextDueDate:'2026-04-01'},
+                {id:3, memberId:7, memberName:'أحمد خليل', amount:5800, monthlyPayment:200, remaining:5600, loanDate:'2024-07-01', nextDueDate:'2026-04-01'},
+                {id:4, memberId:9, memberName:'خالد محمد', amount:13900, monthlyPayment:400, remaining:13500, loanDate:'2025-11-01', nextDueDate:'2026-04-01'},
+                {id:5, memberId:11, memberName:'عبد الله حمدان', amount:14200, monthlyPayment:250, remaining:13950, loanDate:'2025-11-01', nextDueDate:'2026-04-01'},
+                {id:6, memberId:12, memberName:'محمد عبد الله', amount:1800, monthlyPayment:200, remaining:1600, loanDate:'2024-01-01', nextDueDate:'2026-04-01'},
+                {id:7, memberId:13, memberName:'فيصل حمود', amount:5000, monthlyPayment:200, remaining:4800, loanDate:'2025-11-01', nextDueDate:'2026-04-01'},
+                {id:8, memberId:15, memberName:'محمد خالد', amount:3600, monthlyPayment:200, remaining:3400, loanDate:'2025-08-01', nextDueDate:'2026-04-01'},
+                {id:9, memberId:16, memberName:'نايف أيمن', amount:6000, monthlyPayment:200, remaining:5800, loanDate:'2026-01-01', nextDueDate:'2026-04-01'}
+            ];
+        }
+        
+        if(savedEmergency) emergencyBalance = parseFloat(savedEmergency);
+        if(savedEmergencyLog) emergencyLog = JSON.parse(savedEmergencyLog);
+        if(savedPhones) adminPhones = JSON.parse(savedPhones);
+        if(savedTotalLent) totalLent = parseFloat(savedTotalLent);
+        
+        saveAllData();
+    }
+    
+    document.getElementById('searchMember')?.addEventListener('input', displayMembers);
+    loadData();
+    
+    setTimeout(() => {
+        document.getElementById('splash').style.opacity = '0';
+        setTimeout(() => {
+            document.getElementById('splash').style.display = 'none';
+            document.getElementById('app').style.display = 'block';
+            refreshAll();
+            updateAdminSelects();
+        }, 500);
+    }, 1500);
+    
+    window.onclick = function(e) { if(e.target.classList.contains('modal')) closeModal(); }
 </script>
 </body>
 </html>
