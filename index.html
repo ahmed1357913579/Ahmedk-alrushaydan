@@ -33,7 +33,7 @@
         .page-header { text-align: center; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #1a2a4a; }
         .page-header h2 { color: #1a2a4a; font-size: 22px; }
         .card { background: #ffffff; border: 1px solid #1a2a4a; border-radius: 15px; padding: 15px; margin-bottom: 12px; }
-        .member-row { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; }
+        .member-row { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
         .member-name { font-size: 16px; font-weight: bold; margin-bottom: 5px; color: #1a2a4a; }
         .member-small { font-size: 11px; opacity: 0.6; color: #1a2a4a; }
         .balance-green { color: #2e7d32; font-weight: bold; }
@@ -44,11 +44,13 @@
         .stat-card { background: #ffffff; border: 1px solid #1a2a4a; border-radius: 15px; padding: 15px; text-align: center; }
         .stat-value { font-size: 24px; font-weight: bold; color: #1a2a4a; margin: 5px 0; }
         .stat-label { font-size: 11px; opacity: 0.7; }
+        .stat-input { width: 100%; padding: 8px; font-size: 20px; font-weight: bold; text-align: center; border: 2px solid #1a2a4a; border-radius: 10px; background: #f5f0e6; color: #1a2a4a; }
         .btn { padding: 12px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; width: 100%; margin-bottom: 10px; }
         .btn-gold { background: linear-gradient(135deg, #1a2a4a, #2a4a7a); color: #ffffff; }
         .btn-dark { background: rgba(26,42,74,0.1); border: 1px solid #1a2a4a; color: #1a2a4a; }
         .btn-red { background: rgba(220,53,69,0.1); border: 1px solid #dc3545; color: #dc3545; }
         .btn-success { background: #2e7d32; color: white; }
+        .btn-warning { background: #ed6c02; color: white; }
         .btn-small { padding: 6px 12px; font-size: 12px; width: auto; display: inline-block; margin: 0 5px; }
         input, select { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #1a2a4a; background: #ffffff; color: #1a2a4a; margin-bottom: 10px; }
         textarea { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #1a2a4a; background: #ffffff; color: #1a2a4a; font-family: monospace; font-size: 11px; resize: vertical; }
@@ -66,9 +68,10 @@
         .home-footer { text-align: center; padding: 20px; margin-top: 20px; border-top: 1px solid rgba(26,42,74,0.1); }
         .home-footer .developer { font-size: 12px; opacity: 0.7; }
         .home-footer .version { font-size: 10px; opacity: 0.5; margin-top: 4px; }
-        .history-item { background: #f5f0e6; padding: 10px; border-radius: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; }
+        .history-item { background: #f5f0e6; padding: 10px; border-radius: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
         .form-group { margin-bottom: 15px; text-align: right; }
         .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
+        .loan-date { font-size: 10px; color: #1a2a4a; margin-top: 5px; }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -163,19 +166,42 @@
         </div>
     </div>
 
-    <!-- صفحة الإحصائيات -->
+    <!-- صفحة الإحصائيات (مع وضع التعديل) -->
     <div id="statsPage" class="page">
-        <div class="page-header"><h2>📊 الإحصائيات</h2></div>
-        <div class="stats-grid">
-            <div class="stat-card"><div class="stat-label">الرصيد الإجمالي الحالي</div><div class="stat-value" id="totalBalance">0</div></div>
-            <div class="stat-card"><div class="stat-label">إجمالي المبالغ المقترضة</div><div class="stat-value" id="totalLoansAmount">0</div></div>
-            <div class="stat-card"><div class="stat-label">المتاح للإقراض</div><div class="stat-value" id="availableAmount">0</div></div>
-            <div class="stat-card"><div class="stat-label">بند الطوارئ</div><div class="stat-value" id="statsEmergency">0</div></div>
-            <div class="stat-card"><div class="stat-label">إجمالي المُقرض</div><div class="stat-value" id="totalLent">0</div></div>
-            <div class="stat-card"><div class="stat-label">عدد الأعضاء</div><div class="stat-value" id="memberCount">0</div></div>
+        <div class="page-header">
+            <h2>📊 الإحصائيات</h2>
+            <button class="btn-small btn-dark" onclick="checkStatsEditAccess()" style="margin-top:5px; width:auto;">✏️ تعديل الإحصائيات</button>
         </div>
-        <button class="btn btn-dark" onclick="refreshAll()">🔄 تحديث</button>
-        <button class="btn btn-dark edit-stats-btn" onclick="checkStatsEditAccess()" style="margin-top:5px;">✏️ تعديل الإحصائيات</button>
+        
+        <!-- وضع العرض -->
+        <div id="statsDisplayMode">
+            <div class="stats-grid">
+                <div class="stat-card"><div class="stat-label">الرصيد الإجمالي الحالي</div><div class="stat-value" id="totalBalance">0</div><div class="stat-label">ريال</div></div>
+                <div class="stat-card"><div class="stat-label">إجمالي المبالغ المقترضة</div><div class="stat-value" id="totalLoansAmount">0</div><div class="stat-label">ريال</div></div>
+                <div class="stat-card"><div class="stat-label">المتاح للإقراض</div><div class="stat-value" id="availableAmount">0</div><div class="stat-label">ريال</div></div>
+                <div class="stat-card"><div class="stat-label">بند الطوارئ</div><div class="stat-value" id="statsEmergency">0</div><div class="stat-label">ريال</div></div>
+                <div class="stat-card"><div class="stat-label">إجمالي المُقرض</div><div class="stat-value" id="totalLent">0</div><div class="stat-label">ريال</div></div>
+                <div class="stat-card"><div class="stat-label">عدد الأعضاء</div><div class="stat-value" id="memberCount">0</div><div class="stat-label">عضو</div></div>
+            </div>
+        </div>
+        
+        <!-- وضع التعديل -->
+        <div id="statsEditMode" style="display:none;">
+            <div class="stats-grid">
+                <div class="stat-card"><div class="stat-label">الرصيد الإجمالي الحالي</div><input type="number" id="editTotalBalance" class="stat-input"><div class="stat-label">ريال</div></div>
+                <div class="stat-card"><div class="stat-label">إجمالي المبالغ المقترضة</div><input type="number" id="editTotalLoansAmount" class="stat-input"><div class="stat-label">ريال</div></div>
+                <div class="stat-card"><div class="stat-label">المتاح للإقراض</div><input type="number" id="editAvailableAmount" class="stat-input"><div class="stat-label">ريال</div></div>
+                <div class="stat-card"><div class="stat-label">بند الطوارئ</div><input type="number" id="editStatsEmergency" class="stat-input"><div class="stat-label">ريال</div></div>
+                <div class="stat-card"><div class="stat-label">إجمالي المُقرض</div><input type="number" id="editTotalLent" class="stat-input"><div class="stat-label">ريال</div></div>
+                <div class="stat-card"><div class="stat-label">عدد الأعضاء</div><input type="number" id="editMemberCount" class="stat-input"><div class="stat-label">عضو</div></div>
+            </div>
+            <div class="flex-btns">
+                <button class="btn btn-success" onclick="saveStatsEdit()">💾 حفظ التعديلات</button>
+                <button class="btn btn-warning" onclick="cancelStatsEdit()">❌ إلغاء</button>
+            </div>
+        </div>
+        
+        <button class="btn btn-dark" onclick="refreshAll()" style="margin-top:10px;">🔄 تحديث</button>
     </div>
 
     <!-- صفحة الإدارة -->
@@ -212,20 +238,18 @@
 
 <!-- النوافذ المنبثقة -->
 <div id="codeModal" class="modal"><div class="modal-content"><h3>🔐 رمز الدخول</h3><input type="password" id="secretCode" class="code-input" placeholder="•••••" maxlength="5"><button class="btn btn-gold" onclick="verifyCode()">تأكيد</button><button class="btn btn-dark" onclick="closeModal()">إلغاء</button></div></div>
-<div id="editStatsModal" class="modal"><div class="modal-content"><h3>✏️ تعديل الإحصائيات</h3><input type="number" id="editEmergencyBalance" placeholder="بند الطوارئ"><input type="number" id="editTotalLent" placeholder="إجمالي المُقرض"><button class="btn btn-gold" onclick="saveStatsEdit()">حفظ</button><button class="btn btn-dark" onclick="closeModal()">إلغاء</button></div></div>
 <div id="editMemberModal" class="modal"><div class="modal-content"><h3>✏️ تعديل العضو</h3><input type="hidden" id="editMemberId"><input type="text" id="editMemberName" placeholder="الاسم"><input type="tel" id="editMemberPhone" placeholder="الجوال"><input type="number" id="editMemberMonthlySub" placeholder="الاشتراك الشهري"><input type="number" id="editMemberTotalPaid" placeholder="إجمالي المدفوع"><button class="btn btn-gold" onclick="saveMemberEdit()">حفظ</button><button class="btn btn-dark" onclick="closeModal()">إلغاء</button></div></div>
 <div id="emergencySupportModal" class="modal"><div class="modal-content"><h3>🎁 دعم من الطوارئ</h3><select id="supportMember"></select><input type="number" id="supportAmount" placeholder="المبلغ"><div class="radio-group"><label><input type="radio" name="supportType" value="refundable" checked> 🔄 دعم مسترد</label><label><input type="radio" name="supportType" value="nonRefundable"> ❌ دعم غير مسترد</label></div><input type="text" id="supportReason" placeholder="السبب"><button class="btn btn-gold" onclick="confirmSupport()">تأكيد</button><button class="btn btn-dark" onclick="closeModal()">إلغاء</button></div></div>
 <div id="emergencyPayModal" class="modal"><div class="modal-content"><h3>💳 إضافة للطوارئ</h3><input type="number" id="emergencyAddAmount" placeholder="المبلغ"><button class="btn btn-gold" onclick="confirmEmergencyAdd()">تأكيد</button><button class="btn btn-dark" onclick="closeModal()">إلغاء</button></div></div>
 <div id="emergencyLogModal" class="modal"><div class="modal-content"><h3>📋 سجل دعم الطوارئ</h3><div id="emergencyLogList"></div><button class="btn btn-dark" onclick="closeModal()">إغلاق</button></div></div>
 <div id="loanModal" class="modal"><div class="modal-content"><h3>📱 طلب قرض</h3><div id="whatsappLinks"></div><button class="btn btn-dark" onclick="closeModal()">إلغاء</button></div></div>
+<div id="repaymentModal" class="modal"><div class="modal-content"><h3>💰 تسديد قسط</h3><select id="repaymentMember"></select><input type="number" id="repaymentAmount" placeholder="المبلغ المدفوع"><button class="btn btn-gold" onclick="confirmRepayment()">تأكيد السداد</button><button class="btn btn-dark" onclick="closeModal()">إلغاء</button></div></div>
 
 <script>
-    // ========== الرمز السري ==========
+    // ========== إعدادات السحابة ==========
     const SECRET_CODE = '13579';
     let pendingAction = null;
     let pendingMemberId = null;
-
-    // ========== إعدادات السحابة ==========
     let apiUrl = localStorage.getItem('apiUrl') || '';
 
     // ========== البيانات الأساسية ==========
@@ -396,7 +420,7 @@
         let html = '';
         active.forEach(l => {
             let progress = ((l.amount - l.remaining) / l.amount) * 100;
-            html += `<div class="card"><div class="member-name" style="color:#1a2a4a">${l.memberName}</div><div class="loan-date" style="font-size:10px; color:#1a2a4a;">📅 تاريخ القرض: ${l.loanDate}</div><div class="progress-bar"><div class="progress-fill" style="width: ${progress}%"></div></div><div style="display:flex; justify-content:space-between"><span>💰 ${l.amount.toLocaleString()}</span><span>📅 ${l.monthlyPayment}</span></div><div style="display:flex; justify-content:space-between"><span style="color:#e65100">⚡ ${l.remaining.toLocaleString()}</span><span>📆 ${l.nextDueDate}</span></div><button class="btn-small btn-gold" style="margin-top:10px" onclick="openRepaymentForLoan(${l.memberId})">💰 سداد قسط</button></div>`;
+            html += `<div class="card"><div class="member-name" style="color:#1a2a4a">${l.memberName}</div><div class="loan-date">📅 تاريخ القرض: ${l.loanDate}</div><div class="progress-bar"><div class="progress-fill" style="width: ${progress}%"></div></div><div style="display:flex; justify-content:space-between"><span>💰 ${l.amount.toLocaleString()}</span><span>📅 القسط: ${l.monthlyPayment}</span></div><div style="display:flex; justify-content:space-between"><span style="color:#e65100">⚡ المتبقي: ${l.remaining.toLocaleString()}</span><span>📆 ${l.nextDueDate}</span></div><button class="btn-small btn-gold" style="margin-top:10px" onclick="openRepaymentForLoan(${l.memberId})">💰 سداد قسط</button></div>`;
         });
         document.getElementById('loansList').innerHTML = html;
     }
@@ -407,6 +431,21 @@
         document.getElementById('codeModal').style.display = 'flex';
         document.getElementById('secretCode').focus();
         pendingAction = 'repayment';
+    }
+    
+    function confirmRepayment() {
+        let memberId = document.getElementById('repaymentMember').value;
+        let amount = parseFloat(document.getElementById('repaymentAmount').value);
+        if (!memberId) { showMessage('❌ اختر العضو'); return; }
+        if (!amount || amount <= 0) { showMessage('❌ أدخل المبلغ'); return; }
+        let loan = loans.find(l => l.memberId == memberId && l.remaining > 0);
+        if (!loan) { showMessage('❌ لا يوجد قرض نشط'); return; }
+        loan.remaining = Math.max(0, loan.remaining - amount);
+        saveAllData();
+        refreshAll();
+        document.getElementById('repaymentAmount').value = '';
+        closeModal();
+        showMessage(`✅ تم تسديد ${amount.toLocaleString()} ريال`);
     }
     
     function updateAdminSelects() {
@@ -440,8 +479,8 @@
     function undoSubscription(i) { let log = subscriptionsHistory[i]; let m = members.find(m=>m.id==log.memberId); if(m) m.totalPaid -= log.amount; subscriptionsHistory.splice(i,1); saveAllData(); refreshAll(); showMessage('تم التراجع'); }
     function undoLoanPayment(i) { let log = loanPaymentsHistory[i]; let loan = loans.find(l=>l.id==log.loanId); if(loan) loan.remaining += log.amount; loanPaymentsHistory.splice(i,1); saveAllData(); refreshAll(); showMessage('تم التراجع'); }
     
-    function recordMemberSubscription() { let memberId = document.getElementById('subMemberSelect').value; let amount = parseFloat(document.getElementById('subAmount').value) || 200; let date = document.getElementById('subDate').value || new Date().toISOString().split('T')[0]; if(!memberId) return; let m = members.find(m=>m.id==memberId); m.totalPaid += amount; subscriptionsHistory.push({date, memberId, memberName:m.name, amount}); saveAllData(); refreshAll(); showMessage(`✅ تم تسجيل اشتراك ${amount} ريال للعضو ${m.name}`); document.getElementById('subAmount').value=''; }
-    function makeLoanPayment() { let memberId = document.getElementById('loanPaymentMember').value; let date = document.getElementById('loanPaymentDate').value || new Date().toISOString().split('T')[0]; if(!memberId) return; let loan = loans.find(l=>l.memberId==memberId && l.remaining>0); if(!loan) { showMessage('❌ لا يوجد قرض نشط'); return; } let amount = loan.monthlyPayment; loan.remaining = Math.max(0, loan.remaining - amount); loanPaymentsHistory.push({date, memberId, memberName:loan.memberName, amount, remainingAfter:loan.remaining, loanId:loan.id}); saveAllData(); refreshAll(); showMessage(`✅ تم سداد قسط ${amount.toLocaleString()} ريال للعضو ${loan.memberName}`); document.getElementById('loanPaymentDate').value=''; }
+    function recordMemberSubscription() { let memberId = document.getElementById('subMemberSelect').value; let amount = parseFloat(document.getElementById('subAmount').value) || 200; let date = document.getElementById('subDate').value || new Date().toISOString().split('T')[0]; if(!memberId) { showMessage('❌ اختر العضو'); return; } let m = members.find(m=>m.id==memberId); m.totalPaid += amount; subscriptionsHistory.push({date, memberId, memberName:m.name, amount}); saveAllData(); refreshAll(); showMessage(`✅ تم تسجيل اشتراك ${amount.toLocaleString()} ريال للعضو ${m.name}`); document.getElementById('subAmount').value=''; }
+    function makeLoanPayment() { let memberId = document.getElementById('loanPaymentMember').value; let date = document.getElementById('loanPaymentDate').value || new Date().toISOString().split('T')[0]; if(!memberId) { showMessage('❌ اختر العضو'); return; } let loan = loans.find(l=>l.memberId==memberId && l.remaining>0); if(!loan) { showMessage('❌ لا يوجد قرض نشط'); return; } let amount = loan.monthlyPayment; loan.remaining = Math.max(0, loan.remaining - amount); loanPaymentsHistory.push({date, memberId, memberName:loan.memberName, amount, remainingAfter:loan.remaining, loanId:loan.id}); saveAllData(); refreshAll(); showMessage(`✅ تم سداد قسط ${amount.toLocaleString()} ريال للعضو ${loan.memberName}`); document.getElementById('loanPaymentDate').value=''; }
     
     function addMember() { let name = document.getElementById('newMemberName').value; let phone = document.getElementById('newMemberPhone').value; if(!name||!phone) { showMessage('❌ أدخل الاسم والجوال'); return; } let newId = Math.max(...members.map(m=>m.id),0)+1; members.push({id:newId, name, phone, joinDate:new Date().toISOString().split('T')[0], totalPaid:0, monthlySub:200}); saveAllData(); refreshAll(); showMessage(`✅ تم إضافة ${name}`); document.getElementById('newMemberName').value=''; document.getElementById('newMemberPhone').value=''; }
     function addLoan() { let memberId = document.getElementById('loanMember').value; let amount = parseFloat(document.getElementById('loanAmount').value); let installment = parseFloat(document.getElementById('loanInstallment').value); let loanDate = document.getElementById('loanDate').value || new Date().toISOString().split('T')[0]; if(!memberId||!amount||!installment) { showMessage('❌ املأ جميع الحقول'); return; } let m = members.find(m=>m.id==memberId); let newId = Math.max(...loans.map(l=>l.id),0)+1; let nextDate = new Date(); nextDate.setMonth(nextDate.getMonth()+1); loans.push({id:newId, memberId:parseInt(memberId), memberName:m.name, amount, monthlyPayment:installment, remaining:amount, loanDate, nextDueDate:nextDate.toISOString().split('T')[0]}); totalLent += amount; saveAllData(); refreshAll(); showMessage(`✅ تم إضافة قرض بقيمة ${amount.toLocaleString()} ريال`); document.getElementById('loanAmount').value=''; document.getElementById('loanInstallment').value=''; document.getElementById('loanDate').value=''; }
@@ -455,40 +494,73 @@
     function openEditMember(id) { pendingMemberId = id; document.getElementById('codeModal').style.display='flex'; document.getElementById('secretCode').focus(); pendingAction='editMember'; }
     function showEditMemberModal() { let m = members.find(m=>m.id==pendingMemberId); if(m) { document.getElementById('editMemberId').value=m.id; document.getElementById('editMemberName').value=m.name; document.getElementById('editMemberPhone').value=m.phone; document.getElementById('editMemberMonthlySub').value=m.monthlySub; document.getElementById('editMemberTotalPaid').value=m.totalPaid; document.getElementById('editMemberModal').style.display='flex'; } pendingMemberId=null; }
     function saveMemberEdit() { let id = parseInt(document.getElementById('editMemberId').value); let name = document.getElementById('editMemberName').value; let phone = document.getElementById('editMemberPhone').value; let sub = parseFloat(document.getElementById('editMemberMonthlySub').value); let paid = parseFloat(document.getElementById('editMemberTotalPaid').value); let m = members.find(m=>m.id==id); if(m) { m.name=name; m.phone=phone; m.monthlySub=sub; m.totalPaid=paid; saveAllData(); refreshAll(); showMessage('✅ تم تعديل العضو'); closeModal(); } }
-    function checkStatsEditAccess() { document.getElementById('codeModal').style.display='flex'; document.getElementById('secretCode').focus(); pendingAction='editStats'; }
-    function openEditStatsModal() { document.getElementById('editEmergencyBalance').value = emergencyBalance; document.getElementById('editTotalLent').value = totalLent; document.getElementById('editStatsModal').style.display='flex'; }
-    function saveStatsEdit() { let newEmergency = parseFloat(document.getElementById('editEmergencyBalance').value); let newTotalLent = parseFloat(document.getElementById('editTotalLent').value); if(!isNaN(newEmergency)) emergencyBalance = newEmergency; if(!isNaN(newTotalLent)) totalLent = newTotalLent; saveAllData(); refreshAll(); closeModal(); showMessage('✅ تم تعديل الإحصائيات'); }
+    
+    // ========== دوال تعديل الإحصائيات ==========
+    function checkStatsEditAccess() {
+        document.getElementById('codeModal').style.display = 'flex';
+        document.getElementById('secretCode').value = '';
+        document.getElementById('secretCode').focus();
+        pendingAction = 'editStats';
+    }
+    
+    function openStatsEditMode() {
+        document.getElementById('editTotalBalance').value = parseFloat(document.getElementById('totalBalance').innerHTML.replace(/,/g, '')) || 0;
+        document.getElementById('editTotalLoansAmount').value = parseFloat(document.getElementById('totalLoansAmount').innerHTML.replace(/,/g, '')) || 0;
+        document.getElementById('editAvailableAmount').value = parseFloat(document.getElementById('availableAmount').innerHTML.replace(/,/g, '')) || 0;
+        document.getElementById('editStatsEmergency').value = parseFloat(document.getElementById('statsEmergency').innerHTML.replace(/,/g, '')) || 0;
+        document.getElementById('editTotalLent').value = parseFloat(document.getElementById('totalLent').innerHTML.replace(/,/g, '')) || 0;
+        document.getElementById('editMemberCount').value = parseFloat(document.getElementById('memberCount').innerHTML.replace(/,/g, '')) || 0;
+        
+        document.getElementById('statsDisplayMode').style.display = 'none';
+        document.getElementById('statsEditMode').style.display = 'block';
+    }
+    
+    function saveStatsEdit() {
+        let newTotalBalance = parseFloat(document.getElementById('editTotalBalance').value) || 0;
+        let newTotalLoansAmount = parseFloat(document.getElementById('editTotalLoansAmount').value) || 0;
+        let newAvailableAmount = parseFloat(document.getElementById('editAvailableAmount').value) || 0;
+        let newEmergencyBalance = parseFloat(document.getElementById('editStatsEmergency').value) || 0;
+        let newTotalLent = parseFloat(document.getElementById('editTotalLent').value) || 0;
+        let newMemberCount = parseFloat(document.getElementById('editMemberCount').value) || 0;
+        
+        emergencyBalance = newEmergencyBalance;
+        totalLent = newTotalLent;
+        
+        document.getElementById('totalBalance').innerHTML = newTotalBalance.toLocaleString();
+        document.getElementById('totalLoansAmount').innerHTML = newTotalLoansAmount.toLocaleString();
+        document.getElementById('availableAmount').innerHTML = newAvailableAmount.toLocaleString();
+        document.getElementById('statsEmergency').innerHTML = newEmergencyBalance.toLocaleString();
+        document.getElementById('totalLent').innerHTML = newTotalLent.toLocaleString();
+        document.getElementById('memberCount').innerHTML = newMemberCount;
+        
+        document.getElementById('emergencyBalance').innerHTML = newEmergencyBalance.toLocaleString();
+        
+        saveAllData();
+        
+        document.getElementById('statsDisplayMode').style.display = 'block';
+        document.getElementById('statsEditMode').style.display = 'none';
+        
+        showMessage('✅ تم حفظ التعديلات بنجاح');
+    }
+    
+    function cancelStatsEdit() {
+        document.getElementById('statsDisplayMode').style.display = 'block';
+        document.getElementById('statsEditMode').style.display = 'none';
+        showMessage('❌ تم إلغاء التعديلات');
+    }
+    
+    // ========== دوال الحماية ==========
     function resetAll() { if(confirm('⚠️ هل أنت متأكد؟ هذا سيمسح جميع التعديلات')) { localStorage.clear(); location.reload(); } }
     function closeModal() { document.querySelectorAll('.modal').forEach(m=>m.style.display='none'); pendingAction=null; }
     function checkAdminAccess() { document.getElementById('codeModal').style.display='flex'; document.getElementById('secretCode').focus(); pendingAction='admin'; }
     function checkSubscriptionsAccess() { document.getElementById('codeModal').style.display='flex'; document.getElementById('secretCode').focus(); pendingAction='subscriptions'; }
-    function verifyCode() { if(document.getElementById('secretCode').value===SECRET_CODE) { document.getElementById('codeModal').style.display='none'; if(pendingAction==='admin') showPage('adminPage'); else if(pendingAction==='subscriptions') showPage('subscriptionsPage'); else if(pendingAction==='editMember') showEditMemberModal(); else if(pendingAction==='editStats') openEditStatsModal(); else if(pendingAction==='repayment') document.getElementById('repaymentModal').style.display='flex'; showMessage('✅ مرحباً بك'); } else showMessage('❌ الرمز غير صحيح'); }
+    function verifyCode() { if(document.getElementById('secretCode').value===SECRET_CODE) { document.getElementById('codeModal').style.display='none'; if(pendingAction==='admin') showPage('adminPage'); else if(pendingAction==='subscriptions') showPage('subscriptionsPage'); else if(pendingAction==='editMember') showEditMemberModal(); else if(pendingAction==='editStats') openStatsEditMode(); else if(pendingAction==='repayment') document.getElementById('repaymentModal').style.display='flex'; showMessage('✅ مرحباً بك'); } else showMessage('❌ الرمز غير صحيح'); }
     
-    function exportToPDF() { const { jsPDF } = window.jspdf; let doc = new jsPDF({ orientation: 'landscape' }); doc.text('صندوق عائلة الرشيدان - تقرير شامل', 14, 15); doc.text(`التاريخ: ${new Date().toLocaleDateString('ar-EG')}`, 14, 25); let totalPaid = members.reduce((s,m)=>s+m.totalPaid,0); let totalRemain = loans.reduce((s,l)=>s+l.remaining,0); let available = totalPaid - totalRemain - emergencyBalance; let summary = [['البيان', 'القيمة'], ['الرصيد الإجمالي الحالي', totalPaid.toLocaleString()], ['إجمالي القروض', totalRemain.toLocaleString()], ['المتاح للإقراض', available.toLocaleString()], ['بند الطوارئ', emergencyBalance.toLocaleString()], ['إجمالي المُقرض', totalLent.toLocaleString()], ['عدد الأعضاء', members.length.toString()]]; doc.autoTable({ head: [['الملخص المالي', '']], body: summary, startY: 35, styles: { fontSize: 8, halign: 'right' }, headStyles: { fillColor: [26, 42, 74] } }); let memberData = members.map(m => [m.name, m.phone, m.totalPaid, loans.filter(l=>l.memberId===m.id).reduce((s,l)=>s+l.remaining,0)]); doc.autoTable({ head: [['اسم العضو', 'الجوال', 'إجمالي المدفوع', 'المتبقي']], body: memberData, startY: doc.lastAutoTable.finalY + 10, styles: { fontSize: 7, halign: 'right' }, headStyles: { fillColor: [26, 42, 74] } }); doc.save(`تقرير_الرشيدان_${new Date().toLocaleDateString()}.pdf`); showMessage('✅ تم تصدير PDF'); }
+    // ========== تصدير التقارير ==========
+    function exportToPDF() { const { jsPDF } = window.jspdf; let doc = new jsPDF({ orientation: 'landscape' }); doc.text('صندوق عائلة الرشيدان - تقرير شامل', 14, 15); doc.text(`التاريخ: ${new Date().toLocaleDateString('ar-EG')}`, 14, 25); let totalPaid = members.reduce((s,m)=>s+m.totalPaid,0); let totalRemain = loans.reduce((s,l)=>s+l.remaining,0); let available = totalPaid - totalRemain - emergencyBalance; let summary = [['البيان', 'القيمة (ريال)'], ['الرصيد الإجمالي الحالي', totalPaid.toLocaleString()], ['إجمالي القروض', totalRemain.toLocaleString()], ['المتاح للإقراض', available.toLocaleString()], ['بند الطوارئ', emergencyBalance.toLocaleString()], ['إجمالي المُقرض', totalLent.toLocaleString()], ['عدد الأعضاء', members.length.toString()]]; doc.autoTable({ head: [['الملخص المالي', '']], body: summary, startY: 35, styles: { fontSize: 8, halign: 'right' }, headStyles: { fillColor: [26, 42, 74] } }); let memberData = members.map(m => [m.name, m.phone, m.totalPaid.toLocaleString(), loans.filter(l=>l.memberId===m.id).reduce((s,l)=>s+l.remaining,0).toLocaleString()]); doc.autoTable({ head: [['اسم العضو', 'الجوال', 'إجمالي المدفوع', 'المتبقي']], body: memberData, startY: doc.lastAutoTable.finalY + 10, styles: { fontSize: 7, halign: 'right' }, headStyles: { fillColor: [26, 42, 74] } }); doc.save(`تقرير_الرشيدان_${new Date().toLocaleDateString()}.pdf`); showMessage('✅ تم تصدير PDF'); }
     function exportToExcel() { let ws = XLSX.utils.json_to_sheet(members.map(m => ({ 'اسم العضو': m.name, 'الجوال': m.phone, 'تاريخ الاشتراك': m.joinDate, 'إجمالي المدفوع': m.totalPaid, 'المتبقي من القروض': loans.filter(l=>l.memberId===m.id).reduce((s,l)=>s+l.remaining,0) }))); let wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'الأعضاء'); XLSX.writeFile(wb, `تقرير_الرشيدان_${new Date().toLocaleDateString()}.xlsx`); showMessage('✅ تم تصدير Excel'); }
     
-    // نافذة تسديد القسط
-    let repaymentModalDiv = document.createElement('div');
-    repaymentModalDiv.id = 'repaymentModal';
-    repaymentModalDiv.className = 'modal';
-    repaymentModalDiv.innerHTML = `<div class="modal-content"><h3>💰 تسديد قسط</h3><select id="repaymentMember"></select><input type="number" id="repaymentAmount" placeholder="المبلغ المدفوع"><button class="btn btn-gold" onclick="confirmRepayment()">تأكيد السداد</button><button class="btn btn-dark" onclick="closeModal()">إلغاء</button></div>`;
-    document.body.appendChild(repaymentModalDiv);
-    
-    function confirmRepayment() {
-        let memberId = document.getElementById('repaymentMember').value;
-        let amount = parseFloat(document.getElementById('repaymentAmount').value);
-        if (!memberId) { showMessage('❌ اختر العضو'); return; }
-        if (!amount || amount <= 0) { showMessage('❌ أدخل المبلغ'); return; }
-        let loan = loans.find(l => l.memberId == memberId && l.remaining > 0);
-        if (!loan) { showMessage('❌ لا يوجد قرض نشط'); return; }
-        loan.remaining = Math.max(0, loan.remaining - amount);
-        saveAllData();
-        refreshAll();
-        document.getElementById('repaymentAmount').value = '';
-        closeModal();
-        showMessage(`✅ تم تسديد ${amount.toLocaleString()} ريال`);
-    }
-    
+    // ========== تحميل البيانات الأولية ==========
     function loadData() {
         let savedMembers = localStorage.getItem('family_members');
         let savedLoans = localStorage.getItem('family_loans');
