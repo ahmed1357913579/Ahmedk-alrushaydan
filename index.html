@@ -67,10 +67,11 @@
         .home-footer .version { font-size: 10px; opacity: 0.5; margin-top: 4px; }
         .form-group { margin-bottom: 15px; text-align: right; }
         .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
-        .zakat-log { background: #f5f0e6; border-radius: 10px; padding: 10px; margin-bottom: 8px; font-size: 12px; border-right: 3px solid #1a2a4a; }
-        .support-log { background: #f5f0e6; border-radius: 10px; padding: 10px; margin-bottom: 8px; font-size: 12px; border-right: 3px solid #1a2a4a; }
+        .zakat-log, .support-log { background: #f5f0e6; border-radius: 10px; padding: 10px; margin-bottom: 8px; font-size: 12px; border-right: 3px solid #1a2a4a; }
         .radio-group { display: flex; gap: 15px; justify-content: center; margin: 10px 0; }
         .radio-group label { display: flex; align-items: center; gap: 5px; cursor: pointer; color: #1a2a4a; }
+        .backup-section { background: #e8e0d0; border-radius: 15px; padding: 15px; margin: 10px; border: 2px dashed #1a2a4a; }
+        .sync-status { font-size: 11px; color: #2e7d32; margin-top: 5px; text-align: center; }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -135,7 +136,7 @@
             <div class="icon-card" onclick="showPage('loansPage')"><div class="icon">🏦</div><div class="title">القروض</div><div class="info" id="homeLoanCount">0 قرض</div></div>
             <div class="icon-card" onclick="checkSubscriptionsAccess()"><div class="icon">📅</div><div class="title">الاشتراكات</div><div class="info">محمية</div></div>
             <div class="icon-card" onclick="showPage('statsPage')"><div class="icon">📊</div><div class="title">الإحصائيات</div><div class="info">الميزانية</div></div>
-            <div class="icon-card" onclick="showBackupPage()"><div class="icon">💾</div><div class="title">النسخ الاحتياطي</div><div class="info">تصدير/استيراد</div></div>
+            <div class="icon-card" onclick="showCloudSyncPage()"><div class="icon">☁️</div><div class="title">مزامنة سحابية</div><div class="info">Google Sheets</div></div>
             <div class="icon-card" onclick="checkAdminAccess()"><div class="icon">⚙️</div><div class="title">الإدارة</div><div class="info">محمية</div></div>
             <div class="icon-card" onclick="exportToPDF()"><div class="icon">📄</div><div class="title">تقرير PDF</div><div class="info">تصدير</div></div>
             <div class="icon-card" onclick="exportToExcel()"><div class="icon">📊</div><div class="title">تقرير Excel</div><div class="info">تصدير</div></div>
@@ -144,12 +145,47 @@
         <div class="home-footer"><div class="developer">Ahmed K.Alrushaydan</div><div class="version">version 1.0.0</div></div>
     </div>
 
-    <!-- صفحة النسخ الاحتياطي -->
-    <div id="backupPage" class="page">
-        <div class="page-header"><h2>💾 النسخ الاحتياطي والمشاركة</h2><p style="font-size:12px; opacity:0.7;">يمكنك تصدير البيانات ومشاركتها مع العائلة</p></div>
-        <div class="card"><h3>📤 تصدير البيانات</h3><button class="btn btn-success" onclick="exportFullBackup()">📥 تحميل نسخة احتياطية</button><p style="font-size:11px; margin-top:8px;">اضغط هنا لتحميل جميع البيانات كملف JSON، ثم أرسله لأفراد العائلة عبر واتساب</p></div>
-        <div class="card"><h3>📥 استيراد البيانات</h3><input type="file" id="importBackupFile" accept=".json" style="margin-bottom:10px;"><button class="btn btn-gold" onclick="importFullBackup()">📤 استيراد الملف</button><p style="font-size:11px; margin-top:8px;">اختر الملف الذي أرسله المسؤول ثم اضغط استيراد</p></div>
-        <div class="card"><h3>📋 طريقة المشاركة</h3><p style="font-size:12px; line-height:1.6;">1️⃣ <strong>المسؤول:</strong> يضغط "تحميل نسخة احتياطية" ← يتحمل ملف<br>2️⃣ يرسل الملف عبر <strong>واتساب</strong> لأفراد العائلة<br>3️⃣ <strong>أفراد العائلة:</strong> يضغطون "اختيار ملف" ← يختارون الملف ← "استيراد"<br>4️⃣ تظهر عندهم جميع البيانات <strong>نفس بيانات المسؤول</strong></p></div>
+    <!-- صفحة المزامنة السحابية -->
+    <div id="cloudSyncPage" class="page">
+        <div class="page-header">
+            <h2>☁️ المزامنة السحابية</h2>
+            <p style="font-size:12px; opacity:0.7;">مزامنة البيانات مع Google Sheets</p>
+        </div>
+        
+        <!-- إعدادات السحابة -->
+        <div class="card">
+            <h3>🔗 إعدادات Google Sheets</h3>
+            <div class="form-group">
+                <label>رابط Google Apps Script:</label>
+                <input type="text" id="apiUrl" placeholder="https://script.google.com/macros/s/.../exec">
+            </div>
+            <button class="btn btn-gold" onclick="saveApiUrl()">💾 حفظ الإعدادات</button>
+            <div id="cloudStatus" class="sync-status"></div>
+        </div>
+        
+        <!-- عمليات المزامنة -->
+        <div class="card">
+            <h3>📤📥 عمليات المزامنة</h3>
+            <div class="flex-btns">
+                <button class="btn btn-success" onclick="syncToCloud()">📤 مزامنة للسحابة</button>
+                <button class="btn btn-warning" onclick="syncFromCloud()">📥 تحميل من السحابة</button>
+            </div>
+            <p style="font-size:11px; margin-top:10px; opacity:0.7;">
+                🔹 <strong>مزامنة للسحابة:</strong> رفع أحدث التعديلات إلى Google Sheets (يقوم بها المسؤول)<br>
+                🔹 <strong>تحميل من السحابة:</strong> تحميل آخر البيانات المحفوظة (يقوم به الجميع)
+            </p>
+        </div>
+        
+        <!-- نسخ احتياطي -->
+        <div class="card">
+            <h3>💾 نسخ احتياطي يدوي</h3>
+            <div class="flex-btns">
+                <button class="btn btn-dark" onclick="exportBackup()">📥 تصدير نسخة احتياطية</button>
+                <input type="file" id="importFile" accept=".json" style="display:none" onchange="importBackup(this)">
+                <button class="btn btn-dark" onclick="document.getElementById('importFile').click()">📤 استيراد نسخة احتياطية</button>
+            </div>
+            <p style="font-size:11px; margin-top:8px;">يمكنك تصدير البيانات كملف JSON ومشاركتها مع العائلة عبر واتساب</p>
+        </div>
     </div>
 
     <!-- صفحة الأعضاء -->
@@ -184,6 +220,7 @@
             <div class="stat-card"><div class="stat-label">عدد الأعضاء</div><div class="stat-value" id="memberCountStat">0</div><div class="stat-label">عضو</div></div>
         </div>
         <button class="btn btn-dark" onclick="refreshAll()">🔄 تحديث</button>
+        <button class="btn btn-dark" onclick="openStatsEdit()" style="margin-top:5px;">✏️ تعديل الإحصائيات</button>
     </div>
 
     <!-- صفحة الإدارة -->
@@ -203,74 +240,22 @@
         <button class="nav-btn" onclick="showPage('loansPage')"><span>🏦</span><span>القروض</span></button>
         <button class="nav-btn" onclick="checkSubscriptionsAccess()"><span>📅</span><span>الاشتراكات</span></button>
         <button class="nav-btn" onclick="showPage('statsPage')"><span>📊</span><span>الإحصائيات</span></button>
-        <button class="nav-btn" onclick="showBackupPage()"><span>💾</span><span>نسخ احتياطي</span></button>
+        <button class="nav-btn" onclick="showCloudSyncPage()"><span>☁️</span><span>المزامنة</span></button>
         <button class="nav-btn" onclick="checkAdminAccess()"><span>⚙️</span><span>الإدارة</span></button>
     </div>
 </div>
 
 <!-- النوافذ المنبثقة -->
 <div id="codeModal" class="modal"><div class="modal-content"><h3>🔐 رمز الدخول</h3><input type="password" id="secretCode" class="code-input" placeholder="•••••" maxlength="20"><button class="btn btn-gold" onclick="verifyCode()">تأكيد</button><button class="btn btn-dark" onclick="closeModal()">إلغاء</button></div></div>
-
-<div id="changePasswordModal" class="modal">
-    <div class="modal-content"><h3>🔐 تغيير الرقم السري</h3><div class="form-group"><label>الرقم السري القديم:</label><input type="password" id="oldPassword" class="code-input" maxlength="20"></div><div class="form-group"><label>الرقم السري الجديد:</label><input type="password" id="newPassword" class="code-input" maxlength="20"></div><div class="form-group"><label>تأكيد الرقم السري الجديد:</label><input type="password" id="confirmNewPassword" class="code-input" maxlength="20"></div><div class="flex-btns"><button class="btn btn-success" onclick="changePassword()">تأكيد التغيير</button><button class="btn btn-dark" onclick="closeModal()">إلغاء</button></div></div>
-</div>
-
-<!-- نافذة دفع الزكاة -->
-<div id="zakatPaymentModal" class="modal">
-    <div class="modal-content">
-        <h3>📿 دفع الزكاة</h3>
-        <div class="form-group"><label>المبلغ (ريال):</label><input type="number" id="zakatAmount" placeholder="المبلغ"></div>
-        <div class="form-group"><label>التاريخ:</label><input type="date" id="zakatDate"></div>
-        <div class="flex-btns">
-            <button class="btn btn-success" onclick="confirmZakatPayment()">✅ تأكيد الدفع</button>
-            <button class="btn btn-dark" onclick="closeModal()">إلغاء</button>
-        </div>
-    </div>
-</div>
-
-<!-- نافذة سجل الزكاة -->
-<div id="zakatLogModal" class="modal">
-    <div class="modal-content">
-        <h3>📋 سجل الزكاة</h3>
-        <div id="zakatLogList"></div>
-        <button class="btn btn-dark" onclick="closeModal()">إغلاق</button>
-    </div>
-</div>
-
-<!-- نافذة دعم الطوارئ -->
-<div id="emergencySupportModal" class="modal">
-    <div class="modal-content">
-        <h3>🎁 دعم من الطوارئ</h3>
-        <select id="supportMember"></select>
-        <input type="number" id="supportAmount" placeholder="المبلغ">
-        <div class="radio-group"><label><input type="radio" name="supportType" value="refundable" checked> 🔄 دعم مسترد</label><label><input type="radio" name="supportType" value="nonRefundable"> ❌ دعم غير مسترد</label></div>
-        <input type="text" id="supportReason" placeholder="السبب">
-        <button class="btn btn-gold" onclick="confirmSupport()">تأكيد</button>
-        <button class="btn btn-dark" onclick="closeModal()">إلغاء</button>
-    </div>
-</div>
-
-<!-- نافذة إضافة للطوارئ -->
-<div id="emergencyPayModal" class="modal">
-    <div class="modal-content">
-        <h3>💳 إضافة للطوارئ</h3>
-        <input type="number" id="emergencyAddAmount" placeholder="المبلغ">
-        <button class="btn btn-gold" onclick="confirmEmergencyAdd()">تأكيد</button>
-        <button class="btn btn-dark" onclick="closeModal()">إلغاء</button>
-    </div>
-</div>
-
-<!-- نافذة سجل الطوارئ -->
-<div id="emergencyLogModal" class="modal">
-    <div class="modal-content">
-        <h3>📋 سجل دعم الطوارئ</h3>
-        <div id="emergencyLogList"></div>
-        <button class="btn btn-dark" onclick="closeModal()">إغلاق</button>
-    </div>
-</div>
-
+<div id="changePasswordModal" class="modal"><div class="modal-content"><h3>🔐 تغيير الرقم السري</h3><div class="form-group"><label>الرقم السري القديم:</label><input type="password" id="oldPassword" class="code-input" maxlength="20"></div><div class="form-group"><label>الرقم السري الجديد:</label><input type="password" id="newPassword" class="code-input" maxlength="20"></div><div class="form-group"><label>تأكيد الرقم السري الجديد:</label><input type="password" id="confirmNewPassword" class="code-input" maxlength="20"></div><div class="flex-btns"><button class="btn btn-success" onclick="changePassword()">تأكيد التغيير</button><button class="btn btn-dark" onclick="closeModal()">إلغاء</button></div></div></div>
+<div id="zakatPaymentModal" class="modal"><div class="modal-content"><h3>📿 دفع الزكاة</h3><div class="form-group"><label>المبلغ (ريال):</label><input type="number" id="zakatAmount" placeholder="المبلغ"></div><div class="form-group"><label>التاريخ:</label><input type="date" id="zakatDate"></div><div class="flex-btns"><button class="btn btn-success" onclick="confirmZakatPayment()">✅ تأكيد الدفع</button><button class="btn btn-dark" onclick="closeModal()">إلغاء</button></div></div></div>
+<div id="zakatLogModal" class="modal"><div class="modal-content"><h3>📋 سجل الزكاة</h3><div id="zakatLogList"></div><button class="btn btn-dark" onclick="closeModal()">إغلاق</button></div></div>
+<div id="emergencySupportModal" class="modal"><div class="modal-content"><h3>🎁 دعم من الطوارئ</h3><select id="supportMember"></select><input type="number" id="supportAmount" placeholder="المبلغ"><div class="radio-group"><label><input type="radio" name="supportType" value="refundable" checked> 🔄 دعم مسترد</label><label><input type="radio" name="supportType" value="nonRefundable"> ❌ دعم غير مسترد</label></div><input type="text" id="supportReason" placeholder="السبب"><button class="btn btn-gold" onclick="confirmSupport()">تأكيد</button><button class="btn btn-dark" onclick="closeModal()">إلغاء</button></div></div>
+<div id="emergencyPayModal" class="modal"><div class="modal-content"><h3>💳 إضافة للطوارئ</h3><input type="number" id="emergencyAddAmount" placeholder="المبلغ"><button class="btn btn-gold" onclick="confirmEmergencyAdd()">تأكيد</button><button class="btn btn-dark" onclick="closeModal()">إلغاء</button></div></div>
+<div id="emergencyLogModal" class="modal"><div class="modal-content"><h3>📋 سجل دعم الطوارئ</h3><div id="emergencyLogList"></div><button class="btn btn-dark" onclick="closeModal()">إغلاق</button></div></div>
 <div id="editMemberModal" class="modal"><div class="modal-content"><h3>✏️ تعديل العضو</h3><input type="hidden" id="editMemberId"><input type="text" id="editMemberName"><input type="tel" id="editMemberPhone"><input type="number" id="editMemberMonthlySub"><input type="number" id="editMemberTotalPaid"><button class="btn btn-gold" onclick="saveMemberEdit()">حفظ</button><button class="btn btn-dark" onclick="closeModal()">إلغاء</button></div></div>
 <div id="loanModal" class="modal"><div class="modal-content"><h3>📱 طلب قرض</h3><div id="whatsappLinks"></div><button class="btn btn-dark" onclick="closeModal()">إغلاق</button></div></div>
+<div id="editStatsModal" class="modal"><div class="modal-content"><h3>✏️ تعديل الإحصائيات</h3><input type="number" id="editTotalBalance" placeholder="الرصيد الإجمالي"><input type="number" id="editTotalLoansAmount" placeholder="إجمالي القروض"><input type="number" id="editAvailableAmount" placeholder="المتاح للإقراض"><input type="number" id="editEmergencyBalance" placeholder="بند الطوارئ"><input type="number" id="editZakatBalance" placeholder="بند الزكاة"><input type="number" id="editMemberCount" placeholder="عدد الأعضاء"><button class="btn btn-gold" onclick="saveStatsEdit()">حفظ</button><button class="btn btn-dark" onclick="closeModal()">إلغاء</button></div></div>
 
 <script>
     // ========== البيانات الأساسية ==========
@@ -317,6 +302,88 @@
     let adminPhones = { phone1: '966501234567', phone2: '966501234568', phone3: '966501234569' };
     let subscriptionsHistory = [];
 
+    // إعدادات السحابة
+    let apiUrl = localStorage.getItem('apiUrl') || '';
+
+    // ========== دوال المزامنة السحابية ==========
+    function showCloudSyncPage() { showPage('cloudSyncPage'); document.getElementById('apiUrl').value = apiUrl; }
+    
+    function saveApiUrl() {
+        apiUrl = document.getElementById('apiUrl').value;
+        localStorage.setItem('apiUrl', apiUrl);
+        showMessage('✅ تم حفظ رابط التطبيق');
+        document.getElementById('cloudStatus').innerHTML = '✅ الرابط محفوظ';
+    }
+    
+    async function syncToCloud() {
+        if (!apiUrl) { showMessage('❌ الرجاء إدخال رابط التطبيق أولاً'); return; }
+        showMessage('⏳ جاري المزامنة...');
+        let data = { members, loans, emergencyBalance, emergencyLog, zakatBalance, zakatLog, adminPhones, subscriptionsHistory };
+        try {
+            await fetch(apiUrl, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+            showMessage('✅ تم رفع البيانات إلى السحابة');
+            document.getElementById('cloudStatus').innerHTML = '✅ تم رفع البيانات';
+        } catch(err) { showMessage('❌ خطأ: ' + err.message); }
+    }
+    
+    async function syncFromCloud() {
+        if (!apiUrl) { showMessage('❌ الرجاء إدخال رابط التطبيق أولاً'); return; }
+        showMessage('⏳ جاري التحميل من السحابة...');
+        try {
+            let response = await fetch(apiUrl);
+            let data = await response.json();
+            if (data.members) members = data.members;
+            if (data.loans) loans = data.loans;
+            if (data.emergencyBalance !== undefined) emergencyBalance = data.emergencyBalance;
+            if (data.emergencyLog) emergencyLog = data.emergencyLog;
+            if (data.zakatBalance !== undefined) zakatBalance = data.zakatBalance;
+            if (data.zakatLog) zakatLog = data.zakatLog;
+            if (data.adminPhones) adminPhones = data.adminPhones;
+            if (data.subscriptionsHistory) subscriptionsHistory = data.subscriptionsHistory;
+            saveAllData();
+            refreshAll();
+            showMessage('✅ تم تحميل أحدث البيانات من السحابة');
+            document.getElementById('cloudStatus').innerHTML = '✅ تم تحميل البيانات';
+        } catch(err) { showMessage('❌ خطأ في التحميل: ' + err.message); }
+    }
+    
+    // ========== النسخ الاحتياطي ==========
+    function exportBackup() {
+        let backupData = { members, loans, emergencyBalance, emergencyLog, zakatBalance, zakatLog, adminPhones, subscriptionsHistory, backupDate: new Date().toISOString() };
+        let blob = new Blob([JSON.stringify(backupData, null, 2)], {type: 'application/json'});
+        let url = URL.createObjectURL(blob);
+        let a = document.createElement('a');
+        a.href = url;
+        a.download = `صندوق_الرشيدان_${new Date().toISOString().split('T')[0]}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+        showMessage('✅ تم تصدير النسخة الاحتياطية');
+    }
+    
+    function importBackup(input) {
+        let file = input.files[0];
+        if (!file) { showMessage('❌ اختر ملف أولاً'); return; }
+        let reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                let data = JSON.parse(e.target.result);
+                if (data.members) members = data.members;
+                if (data.loans) loans = data.loans;
+                if (data.emergencyBalance !== undefined) emergencyBalance = data.emergencyBalance;
+                if (data.emergencyLog) emergencyLog = data.emergencyLog;
+                if (data.zakatBalance !== undefined) zakatBalance = data.zakatBalance;
+                if (data.zakatLog) zakatLog = data.zakatLog;
+                if (data.adminPhones) adminPhones = data.adminPhones;
+                if (data.subscriptionsHistory) subscriptionsHistory = data.subscriptionsHistory;
+                saveAllData();
+                refreshAll();
+                showMessage('✅ تم استيراد البيانات بنجاح');
+                input.value = '';
+            } catch(err) { showMessage('❌ ملف غير صالح'); }
+        };
+        reader.readAsText(file);
+    }
+
     // ========== دوال العرض ==========
     function showMessage(msg) { let toast = document.createElement('div'); toast.className = 'toast'; toast.innerHTML = msg; document.body.appendChild(toast); setTimeout(() => toast.remove(), 2000); }
     
@@ -330,8 +397,6 @@
         if (pageId === 'adminControlPage') updateAdminSelects();
         updateHomeCounts();
     }
-    
-    function showBackupPage() { showPage('backupPage'); }
     
     function updateHomeCounts() {
         document.getElementById('homeMemberCount').innerHTML = members.length + ' عضو';
@@ -477,7 +542,7 @@
         if(m) { m.name=name; m.phone=phone; m.monthlySub=sub; m.totalPaid=paid; saveAllData(); refreshAll(); showMessage('✅ تم تعديل العضو'); closeModal(); }
     }
     
-    // ========== دوال الزكاة (تخصم من المبلغ المتاح للإقراض) ==========
+    // ========== دوال الزكاة ==========
     function openZakatPayment() {
         document.getElementById('codeModal').style.display = 'flex';
         document.getElementById('secretCode').value = '';
@@ -495,15 +560,13 @@
         let amount = parseFloat(document.getElementById('zakatAmount').value);
         let date = document.getElementById('zakatDate').value || new Date().toISOString().split('T')[0];
         if (!amount || amount <= 0) { showMessage('❌ أدخل مبلغ صحيح'); return; }
-        
-        // إضافة لبند الزكاة (يخصم من المتاح للإقراض)
         zakatBalance += amount;
         zakatLog.unshift({ date, amount, type: 'دفع زكاة' });
         saveAllData();
         updateStats();
         updateHomeCounts();
         closeModal();
-        showMessage(`✅ تم دفع زكاة بقيمة ${amount.toLocaleString()} ريال (تم إضافتها لبند الزكاة)`);
+        showMessage(`✅ تم دفع زكاة بقيمة ${amount.toLocaleString()} ريال`);
         document.getElementById('zakatAmount').value = '';
     }
     
@@ -550,6 +613,33 @@
         showMessage(`✅ تم إضافة ${amount.toLocaleString()} ريال لبند الطوارئ`);
     }
     
+    // ========== دوال الإحصائيات ==========
+    function openStatsEdit() {
+        document.getElementById('editTotalBalance').value = document.getElementById('totalBalance').innerHTML.replace(/,/g, '');
+        document.getElementById('editTotalLoansAmount').value = document.getElementById('totalLoansAmount').innerHTML.replace(/,/g, '');
+        document.getElementById('editAvailableAmount').value = document.getElementById('availableAmount').innerHTML.replace(/,/g, '');
+        document.getElementById('editEmergencyBalance').value = document.getElementById('statsEmergency').innerHTML.replace(/,/g, '');
+        document.getElementById('editZakatBalance').value = document.getElementById('statsZakat').innerHTML.replace(/,/g, '');
+        document.getElementById('editMemberCount').value = document.getElementById('memberCountStat').innerHTML.replace(/,/g, '');
+        document.getElementById('editStatsModal').style.display = 'flex';
+    }
+    
+    function saveStatsEdit() {
+        document.getElementById('totalBalance').innerHTML = parseFloat(document.getElementById('editTotalBalance').value || 0).toLocaleString();
+        document.getElementById('totalLoansAmount').innerHTML = parseFloat(document.getElementById('editTotalLoansAmount').value || 0).toLocaleString();
+        document.getElementById('availableAmount').innerHTML = parseFloat(document.getElementById('editAvailableAmount').value || 0).toLocaleString();
+        document.getElementById('statsEmergency').innerHTML = parseFloat(document.getElementById('editEmergencyBalance').value || 0).toLocaleString();
+        document.getElementById('statsZakat').innerHTML = parseFloat(document.getElementById('editZakatBalance').value || 0).toLocaleString();
+        document.getElementById('memberCountStat').innerHTML = parseFloat(document.getElementById('editMemberCount').value || 0);
+        emergencyBalance = parseFloat(document.getElementById('editEmergencyBalance').value || 0);
+        zakatBalance = parseFloat(document.getElementById('editZakatBalance').value || 0);
+        document.getElementById('emergencyBalance').innerHTML = emergencyBalance.toLocaleString();
+        document.getElementById('zakatBalance').innerHTML = zakatBalance.toLocaleString();
+        saveAllData();
+        closeModal();
+        showMessage('✅ تم حفظ تعديلات الإحصائيات');
+    }
+    
     function restoreOriginalMembers() {
         if(confirm('⚠️ هل أنت متأكد؟ سيتم إعادة الأعضاء الـ 16 الأصليين')) {
             members = JSON.parse(JSON.stringify(ORIGINAL_MEMBERS));
@@ -576,6 +666,7 @@
         localStorage.setItem('family_zakat_log', JSON.stringify(zakatLog));
         localStorage.setItem('family_phones', JSON.stringify(adminPhones));
         localStorage.setItem('family_subscriptions_history', JSON.stringify(subscriptionsHistory));
+        localStorage.setItem('apiUrl', apiUrl);
     }
     
     function loadData() {
@@ -587,6 +678,7 @@
         let savedZakatLog = localStorage.getItem('family_zakat_log');
         let savedPhones = localStorage.getItem('family_phones');
         let savedSubHistory = localStorage.getItem('family_subscriptions_history');
+        let savedApiUrl = localStorage.getItem('apiUrl');
         
         if(savedMembers) members = JSON.parse(savedMembers);
         else members = JSON.parse(JSON.stringify(ORIGINAL_MEMBERS));
@@ -600,46 +692,9 @@
         if(savedZakatLog) zakatLog = JSON.parse(savedZakatLog);
         if(savedPhones) adminPhones = JSON.parse(savedPhones);
         if(savedSubHistory) subscriptionsHistory = JSON.parse(savedSubHistory);
+        if(savedApiUrl) apiUrl = savedApiUrl;
         
         saveAllData();
-    }
-    
-    // ========== النسخ الاحتياطي ==========
-    function exportFullBackup() {
-        let backupData = { members, loans, emergencyBalance, emergencyLog, zakatBalance, zakatLog, adminPhones, subscriptionsHistory, backupDate: new Date().toISOString() };
-        let blob = new Blob([JSON.stringify(backupData, null, 2)], {type: 'application/json'});
-        let url = URL.createObjectURL(blob);
-        let a = document.createElement('a');
-        a.href = url;
-        a.download = `صندوق_الرشيدان_${new Date().toISOString().split('T')[0]}.json`;
-        a.click();
-        URL.revokeObjectURL(url);
-        showMessage('✅ تم تصدير النسخة الاحتياطية');
-    }
-    
-    function importFullBackup() {
-        let fileInput = document.getElementById('importBackupFile');
-        let file = fileInput.files[0];
-        if (!file) { showMessage('❌ اختر ملف أولاً'); return; }
-        let reader = new FileReader();
-        reader.onload = function(e) {
-            try {
-                let data = JSON.parse(e.target.result);
-                if (data.members) members = data.members;
-                if (data.loans) loans = data.loans;
-                if (data.emergencyBalance !== undefined) emergencyBalance = data.emergencyBalance;
-                if (data.emergencyLog) emergencyLog = data.emergencyLog;
-                if (data.zakatBalance !== undefined) zakatBalance = data.zakatBalance;
-                if (data.zakatLog) zakatLog = data.zakatLog;
-                if (data.adminPhones) adminPhones = data.adminPhones;
-                if (data.subscriptionsHistory) subscriptionsHistory = data.subscriptionsHistory;
-                saveAllData();
-                refreshAll();
-                showMessage('✅ تم استيراد البيانات بنجاح');
-                fileInput.value = '';
-            } catch(err) { showMessage('❌ ملف غير صالح'); }
-        };
-        reader.readAsText(file);
     }
     
     function resetAll() { if(confirm('⚠️ هل أنت متأكد؟')) { localStorage.clear(); location.reload(); } }
