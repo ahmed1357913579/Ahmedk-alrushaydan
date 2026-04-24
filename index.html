@@ -152,7 +152,6 @@
             <p style="font-size:12px; opacity:0.7;">مزامنة البيانات مع Google Sheets</p>
         </div>
         
-        <!-- إعدادات السحابة -->
         <div class="card">
             <h3>🔗 إعدادات Google Sheets</h3>
             <div class="form-group">
@@ -163,20 +162,15 @@
             <div id="cloudStatus" class="sync-status"></div>
         </div>
         
-        <!-- عمليات المزامنة -->
         <div class="card">
             <h3>📤📥 عمليات المزامنة</h3>
             <div class="flex-btns">
                 <button class="btn btn-success" onclick="syncToCloud()">📤 مزامنة للسحابة</button>
                 <button class="btn btn-warning" onclick="syncFromCloud()">📥 تحميل من السحابة</button>
             </div>
-            <p style="font-size:11px; margin-top:10px; opacity:0.7;">
-                🔹 <strong>مزامنة للسحابة:</strong> رفع أحدث التعديلات إلى Google Sheets (يقوم بها المسؤول)<br>
-                🔹 <strong>تحميل من السحابة:</strong> تحميل آخر البيانات المحفوظة (يقوم به الجميع)
-            </p>
+            <p style="font-size:11px; margin-top:10px; opacity:0.7;">🔹 <strong>مزامنة للسحابة:</strong> رفع أحدث التعديلات (يقوم بها المسؤول)<br>🔹 <strong>تحميل من السحابة:</strong> تحميل آخر البيانات (يقوم به الجميع)</p>
         </div>
         
-        <!-- نسخ احتياطي -->
         <div class="card">
             <h3>💾 نسخ احتياطي يدوي</h3>
             <div class="flex-btns">
@@ -184,7 +178,7 @@
                 <input type="file" id="importFile" accept=".json" style="display:none" onchange="importBackup(this)">
                 <button class="btn btn-dark" onclick="document.getElementById('importFile').click()">📤 استيراد نسخة احتياطية</button>
             </div>
-            <p style="font-size:11px; margin-top:8px;">يمكنك تصدير البيانات كملف JSON ومشاركتها مع العائلة عبر واتساب</p>
+            <p style="font-size:11px; margin-top:8px;">📌 أرسل الملف المصدر لأفراد العائلة عبر واتساب ليستوردوه</p>
         </div>
     </div>
 
@@ -301,8 +295,6 @@
     let zakatLog = [];
     let adminPhones = { phone1: '966501234567', phone2: '966501234568', phone3: '966501234569' };
     let subscriptionsHistory = [];
-
-    // إعدادات السحابة
     let apiUrl = localStorage.getItem('apiUrl') || '';
 
     // ========== دوال المزامنة السحابية ==========
@@ -722,20 +714,66 @@
         } else showMessage('❌ الرمز غير صحيح');
     }
     
+    // ========== تصدير PDF ==========
     function exportToPDF() {
         const { jsPDF } = window.jspdf;
-        let doc = new jsPDF({ orientation: 'landscape' });
-        doc.text('صندوق عائلة الرشيدان - تقرير شامل', 14, 15);
-        doc.text(`التاريخ: ${new Date().toLocaleDateString('ar-EG')}`, 14, 25);
+        let doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+        
+        // Header
+        doc.setFillColor(26, 42, 74);
+        doc.rect(0, 0, 297, 45, 'F');
+        doc.setFontSize(30);
+        doc.setTextColor(255, 215, 0);
+        doc.text('🏦', 20, 20);
+        doc.setFontSize(16);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(255, 255, 255);
+        doc.text('صندوق عائلة الرشيدان', 148, 20, { align: 'center' });
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'normal');
+        doc.text('ALRUSHAYDAN FAMILY FUND', 148, 30, { align: 'center' });
+        let today = new Date();
+        let dateStr = today.toLocaleDateString('ar-EG');
+        doc.setFontSize(9);
+        doc.text(`التاريخ: ${dateStr}`, 250, 15, { align: 'right' });
+        doc.setDrawColor(255, 215, 0);
+        doc.setLineWidth(0.5);
+        doc.line(10, 38, 287, 38);
+        
+        // Summary
         let totalPaid = members.reduce((s,m) => s + m.totalPaid, 0);
         let totalRemain = loans.reduce((s,l) => s + l.remaining, 0);
         let available = totalPaid - totalRemain - emergencyBalance - zakatBalance;
-        let summary = [['البيان', 'القيمة'], ['الرصيد الإجمالي', totalPaid.toLocaleString()], ['إجمالي القروض', totalRemain.toLocaleString()], ['المتاح للإقراض', available.toLocaleString()], ['بند الطوارئ', emergencyBalance.toLocaleString()], ['بند الزكاة', zakatBalance.toLocaleString()], ['عدد الأعضاء', members.length.toString()]];
-        doc.autoTable({ head: [['الملخص المالي', '']], body: summary, startY: 35, styles: { fontSize: 8, halign: 'right' }, headStyles: { fillColor: [26, 42, 74] } });
-        let memberData = members.map(m => [m.name, m.phone, m.totalPaid.toLocaleString(), loans.filter(l=>l.memberId===m.id).reduce((s,l)=>s+l.remaining,0).toLocaleString()]);
-        doc.autoTable({ head: [['اسم العضو', 'الجوال', 'إجمالي المدفوع', 'المتبقي']], body: memberData, startY: doc.lastAutoTable.finalY + 10, styles: { fontSize: 7, halign: 'right' }, headStyles: { fillColor: [26, 42, 74] } });
-        doc.save(`تقرير_الرشيدان_${new Date().toLocaleDateString()}.pdf`);
-        showMessage('✅ تم تصدير PDF');
+        let summaryData = [['البيان', 'القيمة (ريال)'], ['الرصيد الإجمالي الحالي', totalPaid.toLocaleString()], ['إجمالي المبالغ المقترضة', totalRemain.toLocaleString()], ['المتاح للإقراض', available.toLocaleString()], ['بند الطوارئ', emergencyBalance.toLocaleString()], ['بند الزكاة', zakatBalance.toLocaleString()], ['عدد الأعضاء', members.length.toString()]];
+        doc.autoTable({ head: [['الملخص المالي', '']], body: summaryData, startY: 48, theme: 'striped', styles: { fontSize: 9, halign: 'right', cellPadding: 4, font: 'helvetica' }, headStyles: { fillColor: [26, 42, 74], textColor: [255, 255, 255], fontStyle: 'bold', halign: 'center' }, alternateRowStyles: { fillColor: [245, 240, 230] }, columnStyles: { 0: { cellWidth: 80 }, 1: { cellWidth: 50 } } });
+        
+        // Members
+        let memberData = members.map(m => [m.name, m.phone, m.joinDate, m.totalPaid.toLocaleString(), loans.filter(l => l.memberId === m.id).reduce((s,l) => s + l.remaining, 0).toLocaleString()]);
+        doc.autoTable({ head: [['اسم العضو', 'رقم الجوال', 'تاريخ الاشتراك', 'إجمالي المدفوع', 'المتبقي من القروض']], body: memberData, startY: doc.lastAutoTable.finalY + 8, theme: 'striped', styles: { fontSize: 8, halign: 'right', cellPadding: 3, font: 'helvetica' }, headStyles: { fillColor: [26, 42, 74], textColor: [255, 255, 255], fontStyle: 'bold', halign: 'center' }, alternateRowStyles: { fillColor: [245, 240, 230] } });
+        
+        // Emergency Log
+        if (emergencyLog.length > 0) {
+            let logData = emergencyLog.map(log => [log.date, log.memberName, log.amount.toLocaleString(), log.type, log.reason || '-']);
+            doc.autoTable({ head: [['التاريخ', 'العضو', 'المبلغ', 'نوع الدعم', 'السبب']], body: logData, startY: doc.lastAutoTable.finalY + 8, theme: 'striped', styles: { fontSize: 7, halign: 'right', cellPadding: 3, font: 'helvetica' }, headStyles: { fillColor: [26, 42, 74], textColor: [255, 255, 255], fontStyle: 'bold', halign: 'center' }, alternateRowStyles: { fillColor: [245, 240, 230] } });
+        }
+        
+        // Subscriptions
+        if (subscriptionsHistory.length > 0) {
+            let subData = subscriptionsHistory.slice(0, 20).map(log => [log.date, log.memberName, log.amount.toLocaleString()]);
+            doc.autoTable({ head: [['التاريخ', 'العضو', 'المبلغ']], body: subData, startY: doc.lastAutoTable.finalY + 8, theme: 'striped', styles: { fontSize: 7, halign: 'right', cellPadding: 3, font: 'helvetica' }, headStyles: { fillColor: [26, 42, 74], textColor: [255, 255, 255], fontStyle: 'bold', halign: 'center' }, alternateRowStyles: { fillColor: [245, 240, 230] } });
+        }
+        
+        // Footer
+        let pageCount = doc.internal.getNumberOfPages();
+        for (let i = 1; i <= pageCount; i++) {
+            doc.setPage(i);
+            doc.setFontSize(7);
+            doc.setTextColor(100, 100, 100);
+            doc.text(`صفحة ${i} من ${pageCount} - صندوق عائلة الرشيدان`, 148, 287, { align: 'center' });
+        }
+        
+        doc.save(`تقرير_الرشيدان_${dateStr}.pdf`);
+        showMessage('✅ تم تصدير تقرير PDF بنجاح');
     }
     
     function exportToExcel() {
