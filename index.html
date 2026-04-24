@@ -69,6 +69,7 @@
         .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
         .sync-status { font-size: 11px; color: #2e7d32; margin-top: 5px; text-align: center; }
         .setup-box { background: #e8e0d0; border-radius: 15px; padding: 15px; margin: 10px; border: 2px solid #ffc107; }
+        .auto-sync-badge { position: fixed; bottom: 70px; right: 10px; background: #2e7d32; color: white; padding: 4px 8px; border-radius: 20px; font-size: 9px; z-index: 100; opacity: 0.7; }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -85,6 +86,7 @@
 </div>
 
 <div class="app" id="app">
+    <div class="auto-sync-badge" id="autoSyncBadge">🔄 تزامن تلقائي</div>
 
     <!-- الصفحة الرئيسية -->
     <div id="homePage" class="page active">
@@ -142,7 +144,7 @@
         <div class="home-footer"><div class="developer">Ahmed K.Alrushaydan</div><div class="version">version 2.0.0</div></div>
     </div>
 
-    <!-- صفحة الإعدادات (Google Sheets API) -->
+    <!-- صفحة الإعدادات -->
     <div id="settingsPage" class="page">
         <div class="page-header">
             <h2>⚙️ إعدادات السحابة</h2>
@@ -164,7 +166,7 @@
             <div id="cloudStatus" class="sync-status"></div>
             <p style="font-size:11px; margin-top:10px; opacity:0.7;">
                 ⚠️ يجب مشاركة الجدول مع Anyone with the link - Editor<br>
-                📌 بعد حفظ الإعدادات، اضغط "تحميل من السحابة" لجلب البيانات
+                📌 التحميل التلقائي يعمل كل 15 دقيقة تلقائياً
             </p>
         </div>
     </div>
@@ -286,6 +288,107 @@
     // إعدادات Google Sheets
     let spreadsheetId = localStorage.getItem('spreadsheetId') || '';
     let apiKey = localStorage.getItem('apiKey') || '';
+    
+    // متغير التحميل التلقائي
+    let autoSyncInterval = null;
+
+    // ========== التحميل التلقائي كل 15 دقيقة ==========
+    function startAutoSync() {
+        if (autoSyncInterval) {
+            clearInterval(autoSyncInterval);
+        }
+        
+        let savedSpreadsheetId = localStorage.getItem('spreadsheetId');
+        let savedApiKey = localStorage.getItem('apiKey');
+        
+        if (savedSpreadsheetId && savedApiKey) {
+            autoSyncInterval = setInterval(function() {
+                console.log('🔄 التحميل التلقائي من السحابة...');
+                syncFromCloudAuto();
+            }, 900000); // 15 دقيقة
+            
+            document.getElementById('autoSyncBadge').style.opacity = '1';
+            console.log('✅ تم تفعيل التحميل التلقائي (كل 15 دقيقة)');
+        }
+    }
+    
+    // نسخة مخصصة للتحميل التلقائي (بدون رسائل متكررة)
+    async function syncFromCloudAuto() {
+        let savedSpreadsheetId = localStorage.getItem('spreadsheetId');
+        let savedApiKey = localStorage.getItem('apiKey');
+        
+        if (!savedSpreadsheetId || !savedApiKey) return;
+        
+        try {
+            // تحميل الأعضاء
+            let membersUrl = `https://sheets.googleapis.com/v4/spreadsheets/${savedSpreadsheetId}/values/Members!A:F?key=${savedApiKey}`;
+            let membersRes = await fetch(membersUrl);
+            let membersData = await membersRes.json();
+            
+            if (membersData.values && membersData.values.length > 1) {
+                let newMembers = [];
+                for (let i = 1; i < membersData.values.length; i++) {
+                    let row = membersData.values[i];
+                    newMembers.push({
+                        id: row[0] ? parseInt(row[0]) : i,
+                        name: row[1] || '',
+                        phone: row[2] || '',
+                        joinDate: row[3] || '',
+                        totalPaid: parseFloat(row[4]) || 0,
+                        monthlySub: parseFloat(row[5]) || 200
+                    });
+                }
+                
+                // التحقق مما إذا كانت البيانات قد تغيرت
+                let dataChanged = JSON.stringify(members) !== JSON.stringify(newMembers);
+                
+                if (dataChanged) {
+                    members = newMembers;
+                    
+                    // تحميل القروض
+                    let loansUrl = `https://sheets.googleapis.com/v4/spreadsheets/${savedSpreadsheetId}/values/Loans!A:H?key=${savedApiKey}`;
+                    let loansRes = await fetch(loansUrl);
+                    let loansData = await loansRes.json();
+                    
+                    if (loansData.values && loansData.values.length > 1) {
+                        let newLoans = [];
+                        for (let i = 1; i < loansData.values.length; i++) {
+                            let row = loansData.values[i];
+                            newLoans.push({
+                                id: row[0] ? parseInt(row[0]) : i,
+                                memberId: parseInt(row[1]) || 0,
+                                memberName: row[2] || '',
+                                amount: parseFloat(row[3]) || 0,
+                                monthlyPayment: parseFloat(row[4]) || 0,
+                                remaining: parseFloat(row[5]) || 0,
+                                loanDate: row[6] || '',
+                                nextDueDate: row[7] || ''
+                            });
+                        }
+                        loans = newLoans;
+                    }
+                    
+                    // تحميل الإعدادات
+                    let settingsUrl = `https://sheets.googleapis.com/v4/spreadsheets/${savedSpreadsheetId}/values/Settings!A:B?key=${savedApiKey}`;
+                    let settingsRes = await fetch(settingsUrl);
+                    let settingsData = await settingsRes.json();
+                    
+                    if (settingsData.values && settingsData.values.length > 1) {
+                        for (let i = 1; i < settingsData.values.length; i++) {
+                            if (settingsData.values[i][0] === 'EmergencyBalance') emergencyBalance = parseFloat(settingsData.values[i][1]) || 9988;
+                            if (settingsData.values[i][0] === 'ZakatBalance') zakatBalance = parseFloat(settingsData.values[i][1]) || 0;
+                        }
+                    }
+                    
+                    saveAllData();
+                    refreshAll();
+                    console.log('✅ تم تحديث البيانات تلقائياً من السحابة');
+                }
+            }
+        } catch(err) {
+            console.log('⚠️ فشل التحميل التلقائي: ' + err.message);
+        }
+    }
 
     // ========== دوال Google Sheets API ==========
     function showSettingsPage() { showPage('settingsPage'); document.getElementById('spreadsheetId').value = spreadsheetId; document.getElementById('apiKey').value = apiKey; }
@@ -297,6 +400,9 @@
         localStorage.setItem('apiKey', apiKey);
         showMessage('✅ تم حفظ إعدادات Google Sheets');
         document.getElementById('cloudStatus').innerHTML = '✅ الإعدادات محفوظة';
+        
+        // إعادة تشغيل التحميل التلقائي
+        startAutoSync();
     }
     
     async function syncFromCloud() {
@@ -305,7 +411,6 @@
         document.getElementById('cloudStatus').innerHTML = '⏳ جاري التحميل...';
         
         try {
-            // تحميل الأعضاء
             let membersUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/Members!A:F?key=${apiKey}`;
             let membersRes = await fetch(membersUrl);
             let membersData = await membersRes.json();
@@ -325,7 +430,6 @@
                 }
             }
             
-            // تحميل القروض
             let loansUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/Loans!A:H?key=${apiKey}`;
             let loansRes = await fetch(loansUrl);
             let loansData = await loansRes.json();
@@ -347,7 +451,6 @@
                 }
             }
             
-            // تحميل الإعدادات
             let settingsUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/Settings!A:B?key=${apiKey}`;
             let settingsRes = await fetch(settingsUrl);
             let settingsData = await settingsRes.json();
@@ -375,7 +478,6 @@
         document.getElementById('cloudStatus').innerHTML = '⏳ جاري الحفظ...';
         
         try {
-            // حفظ الأعضاء
             let membersData = [['ID', 'Name', 'Phone', 'JoinDate', 'TotalPaid', 'MonthlySub']];
             members.forEach(m => membersData.push([m.id, m.name, m.phone, m.joinDate, m.totalPaid, m.monthlySub]));
             
@@ -387,7 +489,6 @@
                 body: JSON.stringify(membersBody)
             });
             
-            // حفظ القروض
             let loansData = [['ID', 'MemberID', 'MemberName', 'Amount', 'MonthlyPayment', 'Remaining', 'LoanDate', 'NextDueDate']];
             loans.forEach(l => loansData.push([l.id, l.memberId, l.memberName, l.amount, l.monthlyPayment, l.remaining, l.loanDate, l.nextDueDate]));
             
@@ -399,7 +500,6 @@
                 body: JSON.stringify(loansBody)
             });
             
-            // حفظ الإعدادات
             let settingsData = [['Key', 'Value'], ['EmergencyBalance', emergencyBalance], ['ZakatBalance', zakatBalance]];
             let settingsUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/Settings!A1:B?valueInputOption=RAW&key=${apiKey}`;
             await fetch(settingsUrl, {
@@ -809,6 +909,7 @@
             document.getElementById('app').style.display = 'block';
             refreshAll();
             updateAdminSelects();
+            startAutoSync(); // بدء التحميل التلقائي
         }, 500);
     }, 1500);
     
