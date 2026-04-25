@@ -404,16 +404,13 @@
         let subscriptionAmount = member.totalPaid;
         let loanDebt = loans.filter(l => l.memberId === member.id).reduce((s,l) => s + l.remaining, 0);
         
-        // حساب نصيب العضو من الدعم غير المسترد
         let nonRefundableSupport = emergencyLog.filter(l => l.type === '❌ دعم غير مسترد').reduce((s,l) => s + l.amount, 0);
         let memberCount = members.length;
         let memberShareNonRefundable = memberCount > 0 ? nonRefundableSupport / memberCount : 0;
         
-        // حساب نصيب العضو من الزكاة
         let totalZakat = zakatBalance;
         let memberShareZakat = memberCount > 0 ? totalZakat / memberCount : 0;
         
-        // حساب حق الانسحاب
         let withdrawal = subscriptionAmount - loanDebt - memberShareNonRefundable - memberShareZakat;
         
         return {
@@ -454,7 +451,6 @@
         let remainingAmount = loan.remaining;
         if (remainingAmount <= 0) { showMessage('❌ لا يوجد مبلغ متبقي للسداد'); closeModal(); return; }
         
-        // تسجيل السداد المبكر
         loanPaymentsHistory.unshift({
             date: new Date().toISOString().split('T')[0],
             memberId: loan.memberId,
@@ -541,7 +537,6 @@
         
         let withdrawalAmount = pendingWithdrawalCalc.withdrawal;
         
-        // تسجيل الانسحاب في السجل
         withdrawalsHistory.push({
             date: new Date().toISOString().split('T')[0],
             memberId: pendingWithdrawalMember.id,
@@ -558,27 +553,21 @@
             }
         });
         
-        // إزالة القروض المرتبطة بالعضو
         loans = loans.filter(l => l.memberId !== pendingWithdrawalMember.id);
-        
-        // إزالة العضو من قائمة الأعضاء
         members = members.filter(m => m.id !== pendingWithdrawalMember.id);
         
         saveAllData();
         refreshAll();
         showMessage(`✅ تم تنفيذ انسحاب العضو ${pendingWithdrawalMember.name} بمبلغ ${withdrawalAmount.toLocaleString()} ريال`);
         
-        // تنظيف المتغيرات
         pendingWithdrawalMember = null;
         pendingWithdrawalCalc = null;
         closeModal();
     }
     
-    // ========== عرض سجل المنسحبين ==========
     function showWithdrawalLog() {
         let container = document.getElementById('withdrawalLogList');
         if (!container) {
-            // إنشاء عنصر مؤقت للعرض
             let logHtml = '<div style="background:#f5f0e6; padding:10px; border-radius:10px; max-height:400px; overflow-y:auto;">';
             if (withdrawalsHistory.length === 0) {
                 logHtml += '<p style="text-align:center; opacity:0.6;">لا توجد سجلات انسحاب</p>';
@@ -597,17 +586,29 @@
                 });
             }
             logHtml += '</div>';
-            showMessageWithHTML(logHtml);
+            let toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.style.width = '320px';
+            toast.style.padding = '15px';
+            toast.style.borderRadius = '15px';
+            toast.style.backgroundColor = '#1a2a4a';
+            toast.style.color = '#fff';
+            toast.style.textAlign = 'right';
+            toast.style.maxHeight = '80vh';
+            toast.style.overflowY = 'auto';
+            toast.innerHTML = logHtml;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 8000);
         } else {
             if (withdrawalsHistory.length === 0) {
                 container.innerHTML = '<p style="text-align:center; opacity:0.6;">لا توجد سجلات انسحاب</p>';
             } else {
                 container.innerHTML = withdrawalsHistory.map((log, index) => `
-                    <div class="withdrawal-log" style="background:#f5f0e6; padding:10px; border-radius:10px; margin-bottom:8px;">
+                    <div style="background:#f5f0e6; padding:10px; border-radius:10px; margin-bottom:8px;">
                         <div><span>📅 ${log.date}</span> | <span>👤 ${log.memberName}</span></div>
                         <div>💰 مبلغ الانسحاب: ${log.amount.toLocaleString()} ريال</div>
                         <div>📊 المتبقي من القروض: ${log.remainingDebt ? log.remainingDebt.toLocaleString() : '0'} ريال</div>
-                        <div class="flex-btns" style="margin-top:8px;">
+                        <div style="margin-top:8px;">
                             <button class="btn-small btn-success" onclick="restoreWithdrawnMember(${index})">🔄 إعادة العضو</button>
                         </div>
                     </div>
@@ -643,22 +644,6 @@
             closeModal();
             showMessage(`✅ تم إعادة العضو ${log.memberName} بنجاح`);
         }
-    }
-    
-    function showMessageWithHTML(html) {
-        let toast = document.createElement('div');
-        toast.className = 'toast';
-        toast.style.width = '320px';
-        toast.style.padding = '15px';
-        toast.style.borderRadius = '15px';
-        toast.style.backgroundColor = '#1a2a4a';
-        toast.style.color = '#fff';
-        toast.style.textAlign = 'right';
-        toast.style.maxHeight = '80vh';
-        toast.style.overflowY = 'auto';
-        toast.innerHTML = html;
-        document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 8000);
     }
 
     // ========== دوال Google Sheets API والمزامنة ==========
@@ -727,19 +712,6 @@
                     if (settingsData.values[i][0] === 'ZakatBalance') zakatBalance = parseFloat(settingsData.values[i][1]) || 0;
                 }
             }
-            // تحميل سجل المنسحبين
-            let withdrawalsUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/Withdrawals!A:G?key=${apiKey}`;
-            let withdrawalsRes = await fetch(withdrawalsUrl);
-            let withdrawalsData = await withdrawalsRes.json();
-            if (withdrawalsData.values && withdrawalsData.values.length > 1) {
-                withdrawalsHistory = [];
-                for (let i = 1; i < withdrawalsData.values.length; i++) {
-                    let row = withdrawalsData.values[i];
-                    withdrawalsHistory.push(JSON.parse(row[6] || '{}'));
-                }
-            } else {
-                withdrawalsHistory = [];
-            }
             saveAllData();
             refreshAll();
             showMessage('✅ تم تحميل البيانات من السحابة بنجاح');
@@ -767,7 +739,6 @@
                 method: 'PUT', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ values: settingsData, majorDimension: 'ROWS' })
             });
-            // حفظ سجل المنسحبين
             let withdrawalsData = [['Date', 'MemberID', 'MemberName', 'MemberPhone', 'JoinDate', 'Amount', 'CalculationJSON']];
             withdrawalsHistory.forEach(w => {
                 withdrawalsData.push([w.date, w.memberId, w.memberName, w.memberPhone, w.joinDate, w.amount, JSON.stringify(w.calculation || {})]);
@@ -780,7 +751,6 @@
         } catch(err) { showMessage('❌ خطأ في الحفظ: ' + err.message); }
     }
     
-    // التحميل التلقائي كل 15 دقيقة
     function startAutoSync() {
         if (autoSyncInterval) clearInterval(autoSyncInterval);
         let savedSpreadsheetId = localStorage.getItem('spreadsheetId');
@@ -861,7 +831,7 @@
             totalLoansAmount: customStatsData.totalLoansAmount !== null ? customStatsData.totalLoansAmount : originalTotalRemain,
             availableAmount: customStatsData.availableAmount !== null ? customStatsData.availableAmount : originalAvailable,
             emergencyBalance: customStatsData.emergencyBalance !== null ? customStatsData.emergencyBalance : emergencyBalance,
-            zakatBalance: customStatsData.zakatBalance !== null ? customStatsData.zakatBalance : zakatBalance,
+            zakatBalance: (customStatsData.zakatBalance !== null ? customStatsData.zakatBalance : zakatBalance),
             memberCount: customStatsData.memberCount !== null ? customStatsData.memberCount : members.length
         };
     }
@@ -1181,7 +1151,7 @@
         if(m) { m.name=name; m.phone=phone; m.monthlySub=sub; m.totalPaid=paid; saveAllData(); refreshAll(); showMessage('✅ تم تعديل العضو'); closeModal(); }
     }
     
-    // ========== دوال الزكاة والطوارئ ==========
+    // ========== دوال الزكاة والطوارئ (المعدلة) ==========
     function openZakatPayment() {
         document.getElementById('codeModal').style.display = 'flex';
         document.getElementById('secretCode').focus();
@@ -1198,8 +1168,20 @@
         let amount = parseFloat(document.getElementById('zakatAmount').value);
         let date = document.getElementById('zakatDate').value;
         if (!amount || amount <= 0) { showMessage('❌ أدخل مبلغ صحيح'); return; }
+        
+        // تحديث الرصيد الأساسي
         zakatBalance += amount;
+        
+        // تحديث الإحصائيات المخصصة أيضاً
+        if (customStatsData.zakatBalance !== null) {
+            customStatsData.zakatBalance = zakatBalance;
+            saveCustomStats();
+        }
+        
+        // تسجيل في السجل
         zakatLog.unshift({ date, amount, type: 'دفع زكاة' });
+        
+        // حفظ وتحديث
         saveAllData();
         updateStatsDisplay();
         updateHomeCounts();
