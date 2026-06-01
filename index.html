@@ -166,7 +166,7 @@
             </div>
             <button class="btn btn-gold" onclick="saveApiUrl()">💾 حفظ الإعدادات</button>
             <button class="btn btn-success" onclick="syncFromCloud()">📥 تحميل من السحابة</button>
-            <button class="btn btn-warning" onclick="syncToCloud()">📤 حفظ إلى السحابة</button>
+            <button class="btn btn-warning" onclick="checkCloudPassword()">💾 حفظ إلى السحابة</button>
             <button class="btn btn-dark" onclick="forceSyncFromCloud()">🔄 تحميل قسري (تحديث كامل)</button>
             <div id="cloudStatus" class="sync-status"></div>
             <p style="font-size:11px; margin-top:10px; opacity:0.7;">
@@ -393,6 +393,7 @@
     let pendingLoanId = null;
     let pendingWithdrawalMember = null;
     let pendingWithdrawalCalc = null;
+    let pendingCloudAction = null; // متغير جديد لتتبع إجراء السحابة
     let members = [];
     let loans = [];
     let emergencyBalance = 9988;
@@ -496,8 +497,19 @@
         }
     }
     
-    async function syncToCloud() {
-        if (!apiUrl) { showMessage('❌ الرجاء إدخال رابط التطبيق أولاً'); return; }
+    // دالة جديدة للتحقق من الرمز قبل الحفظ إلى السحابة
+    function checkCloudPassword() {
+        pendingCloudAction = 'saveToCloud';
+        document.getElementById('codeModal').style.display = 'flex';
+        document.getElementById('secretCode').focus();
+    }
+    
+    // دالة تنفيذ الحفظ الفعلي إلى السحابة
+    async function executeSaveToCloud() {
+        if (!apiUrl) { 
+            showMessage('❌ الرجاء إدخال رابط التطبيق أولاً'); 
+            return;
+        }
         
         showMessage('⏳ جاري رفع البيانات إلى السحابة...');
         let data = { 
@@ -518,6 +530,11 @@
         } catch(err) { 
             showMessage('❌ خطأ في الرفع: ' + err.message); 
         }
+    }
+    
+    // الدالة الأصلية syncToCloud تم تعديلها لتصبح checkCloudPassword
+    async function syncToCloud() {
+        checkCloudPassword();
     }
     
     async function syncFromCloud(silent = false) {
@@ -1286,7 +1303,7 @@
     }
     
     function resetAll() { if(confirm('⚠️ هل أنت متأكد؟')) { localStorage.clear(); location.reload(); } }
-    function closeModal() { document.querySelectorAll('.modal').forEach(m=>m.style.display='none'); pendingAction=null; }
+    function closeModal() { document.querySelectorAll('.modal').forEach(m=>m.style.display='none'); pendingAction=null; pendingCloudAction=null; }
     function checkAdminAccess() { document.getElementById('codeModal').style.display='flex'; document.getElementById('secretCode').focus(); pendingAction='admin'; }
     function checkSubscriptionsAccess() { document.getElementById('codeModal').style.display='flex'; document.getElementById('secretCode').focus(); pendingAction='subscriptions'; }
     function openChangePasswordModal() { document.getElementById('changePasswordModal').style.display='flex'; }
@@ -1308,8 +1325,11 @@
             else if (pendingAction === 'zakatPayment') showZakatPaymentModal();
             else if (pendingAction === 'earlyRepayment') confirmEarlyRepayment();
             else if (pendingAction === 'executeWithdrawal') executeWithdrawal();
+            else if (pendingCloudAction === 'saveToCloud') executeSaveToCloud();
             showMessage('✅ مرحباً بك');
         } else showMessage('❌ الرمز غير صحيح');
+        pendingAction = null;
+        pendingCloudAction = null;
     }
     
     // ========== تصدير التقارير ==========
@@ -1376,5 +1396,3 @@
     
     window.onclick = function(e) { if(e.target.classList.contains('modal')) closeModal(); }
 </script>
-</body>
-</html>
