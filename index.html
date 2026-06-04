@@ -161,7 +161,7 @@
         <div class="setup-box">
             <div class="form-group">
                 <label>رابط Google Apps Script:</label>
-                <input type="text" id="apiUrl" placeholder="https://script.google.com/macros/s/.../exec" value="https://script.google.com/macros/s/AKfycbxhj7bJEH0SSvHRpa8j7SnoqzL4GecAG98N005OTZCuOHdjRMB8nuiLMNMEi6eq0NfEAg/exec">
+                <input type="text" id="apiUrl" placeholder="https://script.google.com/macros/s/.../exec" value="https://script.google.com/macros/s/AKfycbzTj1u3_I83cqYITxZk-YER33mO21jbnuk3OZ_Rkd8S2nOd6g87CCyCYCKtBnbL8b9veQ/exec">
                 <small>⚠️ تأكد من نشر التطبيق كـ Web App مع صلاحية Anyone</small>
             </div>
             <button class="btn btn-gold" onclick="saveApiUrl()">💾 حفظ الإعدادات</button>
@@ -406,7 +406,7 @@
     let withdrawalsHistory = [];
     
     // إعدادات المزامنة (رابط Apps Script فقط)
-    let apiUrl = localStorage.getItem('apiUrl') || 'https://script.google.com/macros/s/AKfycbxhj7bJEH0SSvHRpa8j7SnoqzL4GecAG98N005OTZCuOHdjRMB8nuiLMNMEi6eq0NfEAg/exec';
+    let apiUrl = localStorage.getItem('apiUrl') || 'https://script.google.com/macros/s/AKfycbzTj1u3_I83cqYITxZk-YER33mO21jbnuk3OZ_Rkd8S2nOd6g87CCyCYCKtBnbL8b9veQ/exec';
     
     // إحصائيات مخصصة
     let customStatsData = {
@@ -614,6 +614,7 @@
         }
     }
 
+    // باقي الدوال كما هي (لم يتم تغييرها)
     // ========== حساب الانسحاب ==========
     function calculateWithdrawalAmount(member) {
         let subscriptionAmount = member.totalPaid;
@@ -1396,3 +1397,5 @@
     
     window.onclick = function(e) { if(e.target.classList.contains('modal')) closeModal(); }
 </script>
+</body>
+</html>
